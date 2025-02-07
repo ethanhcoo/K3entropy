@@ -1,0 +1,38 @@
+#!/bin/tcsh -f
+#
+#  Usage:  pstogif [infile] [outfile]
+#
+#  Converts postscript to GIF using gs and ppmtogif
+#  Requires bounding box to clip image
+#
+#  CTM 11/2001
+#
+onintr clean
+
+set psfile = /tmp/psfile.$$
+if ($1 != "") then
+	set psfile = $1
+else
+	set psfile = /tmp/psfile.$$
+	cat > $psfile
+endif
+
+set bb = `grep %%BoundingBox $psfile` 
+if($#bb < 5) then
+	echo "No Bounding Box -- aborting" 
+	exit
+endif
+
+set xmin = $bb[2]
+set ymin = $bb[3]
+@ deltax = $bb[4] - $bb[2] 
+@ deltay = $bb[5] - $bb[3] 
+
+set dest = /dev/stdout
+if($2 != "") set dest = $2
+echo "$xmin neg $ymin neg translate" |\
+	gs -g$deltax"x"$deltay -sDEVICE=ppmraw\
+	-sOutputFile=- -q - $psfile | (ppmtogif -quiet > $dest)
+
+clean:
+if ($1 == "") rm $psfile

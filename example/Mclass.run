@@ -1,0 +1,7 @@
+
+#
+# Quick test of stable manifold plotting
+#
+
+../bin/mclass -r 20 -e .002 -p 10 2 -l 3 -u | ps2pdf - > Mclass10.pdf
+open Mclass.pdf &

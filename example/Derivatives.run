@@ -1,0 +1,1 @@
+../bin/derivatives -r 2.3 -e .00004 -p 10 2 -l 3 | ps2pdf - > Periodic.pdf

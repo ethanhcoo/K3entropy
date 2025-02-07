@@ -1,0 +1,110 @@
+
+ORBITS OF AUTOMORPHISMS OF K3 SURFACES
+
+	Version 3.2	3/2006
+
+QUICKSTART.
+Type "cd src; make" to install,
+then "cd ../example; ./Traj.run; ./Stable.run" to test.
+
+NOTE FROM CELESTE: the cd src goes in to the src folder. If already in source folder, only type "make." Tip is to stay in the src folder until im  done building and then I can do the ../example.  
+
+THEORY.  A K3 surface S in R^3 is specified by the equation
+
+(1+x^2)(1+y^2)(1+z^2) + Axyz = B .
+
+Each line parallel to the x, y or z axis meets S in 2
+points, so we obtain 3 involutions by "sheet interchange".
+There is also a useful symmetry G(x,y,z) = (x,-y,-z).
+The dynamical system we investigate is f : S -> S given by 
+
+	f(p) = G I_x I_y I_z (p).
+
+This map preserves a natural volume element on S.
+
+PROGRAMS.  This directory contains 2 programs:
+	traj	- plots orbits of f(p);
+	stable  - plots its stable manifold.
+
+TRAJ OUTPUT.  The output of "traj" is a .gif file.
+The main program, "trajps", writes postscript, which
+is piped to obtain a .gif image.
+The postscript output can also be used directly.
+
+TRAJ INPUT.  All input to traj is via command-line arguments.
+The arguments are processed in order, producing
+an image that may include many different features.
+
+-c [x y] -r [r]
+	Set window for image by giving center and "radius".
+	Default is center (0,0), radius 1.2.
+
+-d [x y]
+	Dimension of raster image to be output.
+	The square specified by the window will always
+	be included.
+
+-i [n]
+	Iterations - number of points in orbits.
+	Default 10,000.
+
+-o [x y]
+	Draw the orbit with given real coordinates.
+	Traj solves for z such that p=(x,y,z) lies on
+	the surface S.  
+
+-p [A B]
+	Change the parameters for the surface S.
+
+-R [n]
+	Draw n random orbits.
+
+-t
+	Toggle top sheet filter.  By default, the
+	surface S is "opaque", and only points 
+	on the top sheet are drawn.   This filter
+	make S "transparent", so orbits on both
+	sheet of S appear.
+
+STABLE OUTPUT.  The output of "stable" is a .ps file.
+The map f has a hyperbolic fixed-point at (0,0,1), and
+stable draws its stable manifold.
+
+EXAMPLES.  See the example/ directory for usage.
+
+STABLE INPUT.  All input to stable is via command-line arguments.
+
+-b	Draw only bottom of surface.  By default the surface is
+	transparent.
+
+-c [x y] -r [r]
+	Set window for image by giving center and "radius".
+	Default is center (0,0), radius 1.2.
+
+-e [eps]
+	Set the accurancy of the stable manifold plot. 
+	The manifold is drawn as a series of line segments each
+	of length about eps.
+
+-l [L]
+	Continue extending the stable manifold until the
+	path joining p to f(p) has length > L.
+
+-p [A B]
+	Change the parameters for the surface S.
+
+-q	Quiet.
+
+-s	Spin surface (draw image under (xyz) -> (yzx))
+
+-t	Draw only top of surface
+
+EXAMPLES.  See the example/ directory for usage.
+
+
+Copyright (c) March 2006
+
+Curtis T McMullen
+
+ctm@math.harvard.edu
+
