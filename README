@@ -1,13 +1,11 @@
+Some added Functionality to Curt McMullen's 'ORBITS OF AUTOMORPHISMS OF K3 SURFACES, Version 3.2 3/2006'
+Much of this ReadMe is a regurgitation of his ReadMe.
 
-ORBITS OF AUTOMORPHISMS OF K3 SURFACES
-
-	Version 3.2	3/2006
+See his program for instructions on how to use "Traj" and "Stable." 
 
 QUICKSTART.
 Type "cd src; make" to install,
 then "cd ../example; ./Traj.run; ./Stable.run" to test.
-
-NOTE FROM CELESTE: the cd src goes in to the src folder. If already in source folder, only type "make." Tip is to stay in the src folder until im  done building and then I can do the ../example.  
 
 THEORY.  A K3 surface S in R^3 is specified by the equation
 
@@ -15,62 +13,15 @@ THEORY.  A K3 surface S in R^3 is specified by the equation
 
 Each line parallel to the x, y or z axis meets S in 2
 points, so we obtain 3 involutions by "sheet interchange".
-There is also a useful symmetry G(x,y,z) = (x,-y,-z).
-The dynamical system we investigate is f : S -> S given by 
+These maps preserves a natural volume element on S.
 
-	f(p) = G I_x I_y I_z (p).
+Set f = Iz Iy Ix Iz Iy Ix;
 
-This map preserves a natural volume element on S.
+PROGRAMS.  This directory contains 4 programs:
+	mclass	- 
+	paths  - 
+	periodic - finds almost-periodic points using minimal guaranteed accuracy 
 
-PROGRAMS.  This directory contains 2 programs:
-	traj	- plots orbits of f(p);
-	stable  - plots its stable manifold.
-
-TRAJ OUTPUT.  The output of "traj" is a .gif file.
-The main program, "trajps", writes postscript, which
-is piped to obtain a .gif image.
-The postscript output can also be used directly.
-
-TRAJ INPUT.  All input to traj is via command-line arguments.
-The arguments are processed in order, producing
-an image that may include many different features.
-
--c [x y] -r [r]
-	Set window for image by giving center and "radius".
-	Default is center (0,0), radius 1.2.
-
--d [x y]
-	Dimension of raster image to be output.
-	The square specified by the window will always
-	be included.
-
--i [n]
-	Iterations - number of points in orbits.
-	Default 10,000.
-
--o [x y]
-	Draw the orbit with given real coordinates.
-	Traj solves for z such that p=(x,y,z) lies on
-	the surface S.  
-
--p [A B]
-	Change the parameters for the surface S.
-
--R [n]
-	Draw n random orbits.
-
--t
-	Toggle top sheet filter.  By default, the
-	surface S is "opaque", and only points 
-	on the top sheet are drawn.   This filter
-	make S "transparent", so orbits on both
-	sheet of S appear.
-
-STABLE OUTPUT.  The output of "stable" is a .ps file.
-The map f has a hyperbolic fixed-point at (0,0,1), and
-stable draws its stable manifold.
-
-EXAMPLES.  See the example/ directory for usage.
 
 STABLE INPUT.  All input to stable is via command-line arguments.
 
@@ -102,9 +53,4 @@ STABLE INPUT.  All input to stable is via command-line arguments.
 EXAMPLES.  See the example/ directory for usage.
 
 
-Copyright (c) March 2006
-
-Curtis T McMullen
-
-ctm@math.harvard.edu
 
