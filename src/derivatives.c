@@ -1,6 +1,5 @@
 
-/* Stable:  draws stable manifold of K3 dynamical systems */
-/* Writes to stdout a Postscript file */
+/* Calculates the derivative of f along an orbit */
 
 #include "k3.h"
 #include <math.h>

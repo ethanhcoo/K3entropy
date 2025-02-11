@@ -14,7 +14,7 @@ void init_color_map(), init_surface(), orbit(), random_orbits(), usage(),
 
 void ps_line(point p, point q, int unravel), di(point *ps, int n), setsep(double s), draw_path(int n), draw_manifold(), ps_close();
 
-/*Ethan's experiment starts*/
+/*Ethan's additions start*/
 bool is_recurrent(point p);
 void recurrent_search();
 void search_near(point p, double epsilon, int N);
@@ -67,7 +67,7 @@ void subdivide_plane(point p,point q,point ps[],int n);
 point newton(point p);
 
 
-/*Ethan's experiment ends*/
+/*Ethan's additions end*/
 
 
 int top(point p), unreal(double x, double y);

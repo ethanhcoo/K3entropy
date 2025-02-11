@@ -95,7 +95,7 @@ point f(p)
 {
 	/* Ethan changed: originally was sym(ix(iy)iz) */
 	//iz(iy(ix(iz(iy(ix(p))))))
-	return iz(iy(ix(iz(iy(ix(p)))))); 
+	return iz(iy(ix(p)));  //iz(iy(ix(iz(iy(ix(p)))))); 
 
 
 }
@@ -176,7 +176,7 @@ point newton(p)
 	exit(1);
 }
 
-/* Follow gradient from p to point on surface */
+/* Follow gradient from p to point on surface */ //THIS THING WAS CAUSING JAGGED EDGES!!!!
 point newton_plane(p)
 	point p;
 {
@@ -184,9 +184,9 @@ point newton_plane(p)
 	double s;
 	int i;
 
-	for(i=0; i<1000; i++)
+	for(i=0; i<100000; i++) // was 1000
 	{	s = surf(p);
-		if(s < .001 && (-s) < .001) return(p);
+		if(s < .00001 && (-s) < .00001) return(p); //.001 was working. 
 		v = rescale(p);
 		//v = grad(p);
 		//project v onto p
@@ -195,7 +195,7 @@ point newton_plane(p)
 		//v.y = thing * rescale(p).y;
 		//v.z = thing * rescale(p).z;
 
-		p.x = p.x - s*v.x*.01;
+		p.x = p.x - s*v.x*.01; //.01 was working
 		p.y = p.y - s*v.y*.01;
 		p.z = p.z - s*v.z*.01;
 

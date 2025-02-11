@@ -1,7 +1,3 @@
-
-/* Stable:  draws stable manifold of K3 dynamical systems */
-/* Writes to stdout a Postscript file */
-
 #include "k3.h"
 #include <math.h>
 #include <stdio.h>
@@ -13,14 +9,14 @@ static double centerx = CENTERX, centery = CENTERY, radius = RADIUS;
 static double length=LENGTH, sep = SEP;
 static int drawtop = 1, drawbot = 1, verbose=VERBOSE, spin=0, unravel = 0;
 
-/* Very large array to dynamically store paths*/
+//Very large array to dynamically store paths
 point ps[PSMAX];
 
 //very important for determine_arrays
 int pos_array[PSMAX]; //HOW BIG SHOULD I MAKE THESE??
 int above_array[PSMAX];
 
-int orbit_length = 11;
+int orbit_length = 22;
 const char *word[PSMAX];
 int above = -100000;
 int current_pos = -10000;
@@ -31,7 +27,7 @@ int main(int argc, char *argv[]) {
 	int i,n;
 	double a,b;
 
-	//read in values from stable.run
+	//read in values from mclass.run
 	for(i=1; i<argc; i++)
 	{	if(argv[i][0] != '-') usage();
 		switch(argv[i][1])
@@ -90,23 +86,11 @@ int main(int argc, char *argv[]) {
 	}
 	}
 
-	//recurrent search corner 
-	
-	/*
-	point p = lift(0.25900, 1.32300);
-	for(int i = 0; i <= 1000; i++){
-		if(i % 23 == 0){
-			pprint(p);
-		}
-		p = f(p);
-	}
-	recurrent_search();
-	abort(); */
 
-	//Creat array to record twists and keep track of its length.
-	char *twists_word[10000]; 
+	//Creates arrays to record twists and keep track of its length.
+	char *twists_word[10000]; //twists as characters
 	int twists[10000]; //twist with integer coding. i = s_i. -i = S_{i-1}
-	int twists_length = 0; //MUST start at 0
+	int twists_length = 0; //length of twist array
 
 	//Create (orbit_length-1) pos/height arrays to record paths 
 	int **array_pos = malloc((orbit_length-1) * sizeof(int*));
@@ -179,7 +163,7 @@ int main(int argc, char *argv[]) {
 	fprintf(stderr, "Finite orbit stored\n");
 	
 	//draws straight-line path between q-sorted marked points. Takes its image inder f^2 and record path data
-	int example = 9;
+	int example = 0;
 	int m = 1;
 	
 	for(int i = 0; i < orbit_length-1; i++){ //orbit_length-1
@@ -192,16 +176,19 @@ int main(int argc, char *argv[]) {
 		//for()
 		//graph example path
 		
-		if(i == example){
-			draw_path(m-1);
-		}
+		
+		draw_path(m-1);
+		
+		
 		 //minus 1 since curt has different conventions
 		
 		//determine array and modifying path lengths
+
 		determine_arrays(x_vals, y_vals, array_pos[i], array_height[i], &m, marked_orbit, &path_lengths[i]);
 		determine_arrays(x_vals, y_vals, array_pos_testing[i], array_height_testing[i], &m, marked_orbit, &path_lengths_testing[i]);  
 		
 	}
+	
 	for(int k = 0; k < 20; k++){
 		fprintf(stderr, "(%d, %d)\n",pos_array[k], above_array[k]);
 	}
@@ -223,7 +210,7 @@ int main(int argc, char *argv[]) {
 			fprintf(stderr, "(%d, %d)\n", array_pos_testing[k][j], array_height_testing[k][j]);
 		}
 	}	
-	abort();
+	//abort();
 
 
 	//Creates temporary arrays to store path after contracting first through kth vertices

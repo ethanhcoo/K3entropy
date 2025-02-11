@@ -2,18 +2,37 @@
 /* Postscript plotting routines */
 
 #include "k3.h"
+#include "math.h"
+
 #include <stdio.h>
 
-#define PAGEX 540       /* Page size */
+#define PAGEX 540       /* Page size: was 540 */
 #define PAGEY 720       /* Offset of lower left corner */
 #define CORNX 36
 #define CORNY 36
-#define LINEWIDTH 0.20  /* Line width in device units */
+#define LINEWIDTH 1// was 0.20  /* Line width in device units */
 #define BORDER 0.10     /* Default border percentage */
 
 /* Defaults */
 static double linewidth=LINEWIDTH;
 double size, xmax, xmin, ymax, ymin;
+
+point normalize(point p){
+	p.x = p.x/(1 + norm(p));
+	p.y = p.y/(1 + norm(p));
+	p.z = p.z/(1 + norm(p));
+
+	p.x = p.x*pow(norm(p), 0);
+	p.y = p.y*pow(norm(p), 0);
+	p.z = p.z*pow(norm(p), 0);
+
+	p.x = p.x*1;
+	p.y = p.y*1;
+	p.z = p.z*1;
+
+	return p;
+}
+
 
 /* Start plot */
 void ps_open(argc,argv)
@@ -73,7 +92,7 @@ void ps_window(centerx, centery, radius)
 		xmin,ymin,xmin,ymax,xmax,ymax,xmax,ymin);
 	
 	printf("0.9 setgray\n");
-	printf("/l {newpath moveto lineto 0 0 0 setrgbcolor stroke 0.5} def\n"); 
+	printf("/l {newpath moveto lineto 0 0 0 setrgbcolor stroke 3} def\n"); //stroke changes line thickness
 	printf("/o {newpath moveto lineto 1 0 0 setrgbcolor stroke} def\n"); /*Ethan added this line for orange paths*/
 	printf("/d {newpath 0 0 1 setrgbcolor arc fill} def\n"); /*Ethan added this line for orange paths*/
 	printf("/b {newpath .5 .5 .5 setrgbcolor arc fill} def\n"); /*Ethan added this line for backgroung surface*/
@@ -95,8 +114,13 @@ int inside(p)
 void ps_line(point p,point q, int unravel)
 {
 	if(unravel){
-		p = transform(p);
-		q = transform(q);
+		p = normalize(stereo_proj(rescale(p)));
+		q = normalize(stereo_proj(rescale(q)));
+		if(inside(p) || inside(q)){
+			printf("%.5lf %.5lf %.5lf %.5lf o\n",
+			p.x,p.y,q.x,q.y);
+		}
+		return;
 	}
 	if(inside(p) || inside(q)){
 		printf("%.5lf %.5lf %.5lf %.5lf l\n",
@@ -107,8 +131,8 @@ void ps_line(point p,point q, int unravel)
 void ps_line_color(point p, point q, int unravel) /*Ethan added this. It draws a colored segment*/
 {
 	if(unravel){
-		p = transform(p);
-		q = transform(q);
+		p = normalize(stereo_proj(rescale(p)));
+		q = normalize(stereo_proj(rescale(q)));
 	}
 	if(inside(p) || inside(q)){
 			printf("%.5lf %.5lf %.5lf %.5lf o\n",
@@ -119,14 +143,17 @@ void ps_line_color(point p, point q, int unravel) /*Ethan added this. It draws a
 void ps_dot(point p, int unravel)/*Ethan added this. It draws a dot*/
 {
 	if(unravel){
-		p = stereo_proj(rescale(p));
+		p = normalize(stereo_proj(rescale(p)));
+		printf("%.5lf %.5lf .005 0 360 d\n", //ethan added
+		p.x,p.y);
+		return;
 	}
 	if(inside(p) && top(p)){
-		printf("%.5lf %.5lf .05 0 360 d\n", //originally .005, changed to 5e-7
+		printf("%.5lf %.5lf .005 0 360 d\n", //originally .005, changed to 5e-7
 		p.x,p.y);
 	}
 	if(inside(p) && !top(p)){
-		printf("%.5lf %.5lf .05 0 360 p\n", /*fist number controls dot size*/
+		printf("%.5lf %.5lf .005 0 360 p\n", /*fist number controls dot size*/
 		p.x,p.y);
 	}
 }

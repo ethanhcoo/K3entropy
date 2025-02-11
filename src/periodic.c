@@ -1,6 +1,5 @@
 
-/* Stable:  draws stable manifold of K3 dynamical systems */
-/* Writes to stdout a Postscript file */
+/* For finding recurrent points with controllable precision */
 
 
 #include <math.h>
