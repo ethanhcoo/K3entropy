@@ -7,33 +7,25 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-
 static double centerx = CENTERX, centery = CENTERY, radius = RADIUS;
 static double length=LENGTH, sep = SEP;
 static int drawtop = 1, drawbot = 1, verbose=VERBOSE, spin=0, unravel = 0;
 
-/* Very large array to dynamically store paths*/
-point ps[PSMAX];
-
-//very important for determine_arrays
-int pos_array[PSMAX]; //HOW BIG SHOULD I MAKE THESE??
-int above_array[PSMAX];
-
-int orbit_length = 23;
-const char *word[PSMAX];
-int above = -100000;
-int current_pos = -10000;
-
-int alpha = 10;
+int alpha = 10; //derivative bound requirements
 int beta = 10;
 
-double px(double s, double t);
-double py(double s, double t);
-double pxx(double s, double t);
-double pxy(double s, double t);
-double pyy(double s, double t);
-int chart(point p); //outputs 1,2,3,4,5,6 depending on chart p belongs to (might belong to two)
+//int A = 10;
+//int B = 2;
 
+double px(double s, double t);//partial_x p
+double py(double s, double t);//partal_y p
+double pxx(double s, double t);//partial_xx p
+double pxy(double s, double t);//partial_xy p
+double pyy(double s, double t);//partial_yy p
+int chart(point p); //outputs a chart, labelled 1-6, which p belongs to (p might belong to two charts)
+double D1(point p);
+double D2(point p);
+double D3(point p);
 int main(int argc, char *argv[]) {
 	int i,n;
 	double a,b;
@@ -97,16 +89,21 @@ int main(int argc, char *argv[]) {
 	}
 	}
 
-	//recurrent search corner 
 	
-	int iters = 11;
-	point p = lift(0.89460, 0.00480);
-    point q = vtan(p);
+	point p;
+    p.x = 1.52907383338931296461000000000000000000000000000000;
+    p.y = 0.51980719077651643300800000000000000000000000000000;
+    p.z = -1.52907383338931296461000000000000000000000000000000;
+    
+    //lift(0.89407411600000000000, 0.00459969000000000000);
+    //point q = vtan(p);
     // Allocate memory for the array of pointers
-    double** tangent = (double**)malloc(3 * sizeof(double*));
-    double** tangent2 = (double**)malloc(3 * sizeof(double*));
+   // double** tangent = (double**)malloc(3 * sizeof(double*));
+   // double** tangent2 = (double**)malloc(3 * sizeof(double*));
 
     // Allocate memory for each row
+
+    /*
     for (int i = 0; i < 3; ++i) {
         tangent[i] = (double*)malloc(3 * sizeof(double));
         tangent2[i] = (double*)malloc(3 * sizeof(double));
@@ -117,11 +114,11 @@ int main(int argc, char *argv[]) {
 
     tangent2[0][0] = 0;
     tangent2[1][0] = 0;
-    tangent2[2][0] = 0;
+    tangent2[2][0] = 0;*/
 
-   // fprintf(stderr, "MADE IT");
 
     double** matrix = (double**)malloc(3 * sizeof(double*));
+    double** coordmatrix = (double**)malloc(3 * sizeof(double*));
     double** matrix_temp = (double**)malloc(3 * sizeof(double*));
     double** temp1 = (double**)malloc(3 * sizeof(double*));
     double** temp2 = (double**)malloc(3 * sizeof(double*));
@@ -134,6 +131,7 @@ int main(int argc, char *argv[]) {
 
     for (int i = 0; i < 3; ++i) {
         matrix[i] = (double*)malloc(3 * sizeof(double));
+        coordmatrix[i] = (double*)malloc(3 * sizeof(double));
         matrix_temp[i] = (double*)malloc(3 * sizeof(double));
         temp1[i] = (double*)malloc(3 * sizeof(double));
         temp2[i] = (double*)malloc(3 * sizeof(double));
@@ -145,13 +143,11 @@ int main(int argc, char *argv[]) {
         z_mat[i] = (double*)malloc(3 * sizeof(double));
     }
     for(int i = 0; i < 3; i++){
-       // fprintf(stderr, "inside");
         for(int j = 0; j < 3; j++){
-           // fprintf(stderr, "inside2");
             if(i==j){
                 matrix_temp[i][j] = 1;
-                //fprintf(stderr, "MADE IT");
                 matrix[i][j] = 1;
+                coordmatrix[i][j] = 1;
                 temp1[i][j] = 1;
                 temp2[i][j] = 1;
                 temp3[i][j] = 1;
@@ -163,6 +159,7 @@ int main(int argc, char *argv[]) {
 
             } else{
                 matrix_temp[i][j] = 0;
+                coordmatrix[i][j] = 0;
                 matrix[i][j] = 0;
                 temp1[i][j] = 0;
                 temp2[i][j] = 0;
@@ -176,31 +173,30 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    
     for(int i = 0; i < 22; i++){
-        Dix(p, x_mat); 
-        //fprintf(stderr, "%f", x_mat[0][0]);
-        p = ix(p);
-        Diy(p, y_mat); 
-        p = iy(p);
-        Diz(p, z_mat);
-        p = iz(p); 
-        multiplyMatrices(y_mat, x_mat, temp2, 3, 3, 3, 3);
-        multiplyMatrices(z_mat, temp2, temp3, 3, 3, 3, 3);
-        //pprint(p);
-        //fprintf(stderr, "chart is %d\n", chart(p));
-        //fprintf(stderr, "chart is %d\n", chart(f(p)));
 
-        //fprintf(stderr, "matrix is \n");
-        //printMatrix(temp3, 3, 3);
+        double a, b;
+        if(chart(p) == 1 || chart(p) == 4){
+           a = p.x;
+           b = p.y;
+        }
+        if(chart(p) == 2 || chart(p) == 5){
+            a = p.x;
+            b = p.z;
+         }
+         if(chart(p) == 3 || chart(p) == 6){
+            a = p.y;
+            b = p.z;
+         }
+
         int k = 0;
         for(int i = 0; i < 3; i++){
             if(i == 3-chart(p)){
-                temp4[i][0] = px(p.x, p.y);
-                temp4[i][1] = py(p.x, p.y);
+                temp4[i][0] = px(a, b);
+                temp4[i][1] = py(a, b);
             } else if(i == 6-chart(p)){
-                temp4[i][0] = -px(-p.x, p.y);
-                temp4[i][1] = -py(-p.x, p.y);
+                temp4[i][0] = px(-a,b); //because p_+(-x,y) = -p_-(x,y)
+                temp4[i][1] = -py(-a,b); //because p_+(-x,y) = -p_-(x,y)
             } else{
                 if(k == 0){
                     temp4[i][0] = 1;
@@ -211,7 +207,8 @@ int main(int argc, char *argv[]) {
                     temp4[i][1] = 1;
                 }
                 if(k == 2){
-                    fprintf(stderr, "oops");
+                    fprintf(stderr, "error");
+                    abort();
                 }
                 k++;
             }
@@ -235,46 +232,51 @@ int main(int argc, char *argv[]) {
                     temp5[1][j] = 1;
                 }
                 if(k == 2){
-                    fprintf(stderr, "oops");
+                    fprintf(stderr, "error");
+                    abort();
                 }
                 k++;
             }
-            
         }
-        //fprintf(stderr, "trans 1 is \n");
-        //printMatrix(temp4, 3, 2);
-        //fprintf(stderr, "trans 2 is \n");
-        //printMatrix(temp5, 2, 3);
+        //Print Results
+        fprintf(stderr, "x_%d =  \n", i);
+        pprint(p);
         
+        fprintf(stderr, "chart is %d \n", chart(p));
+
+        fprintf(stderr, "(D psi_%d)_{x_%d^c} =  \n", i,i);
+        printMatrix(temp4, 3, 2);
+        fprintf(stderr, "(D phi_{k_%d})_{x_{%d}} =  \n", i+1, i+1);
+        printMatrix(temp5, 2, 3);
+
+        Dix(p, x_mat); 
+        p = ix(p);
+        Diy(p, y_mat); 
+        p = iy(p);
+        Diz(p, z_mat);
+        p = iz(p); 
+
+        multiplyMatrices(y_mat, x_mat, temp2, 3, 3, 3, 3);
+        multiplyMatrices(z_mat, temp2, temp3, 3, 3, 3, 3);
+        fprintf(stderr, "(Df}_{x_%d} =  \n", i);
+        printMatrix(temp3, 3, 3);
+
+        multiplyMatricesAux(temp3, matrix, temp1, 3, 3, 3, 3);
 
         multiplyMatricesAux(temp5, temp3, temp1, 2, 3, 3, 3);
         multiplyMatricesAux(temp3, temp4, temp1, 2, 3, 3, 2);
-        fprintf(stderr, "final matrix is \n");
+        fprintf(stderr, "(Df^c}_{x_%d^c} =  \n", i);
         printMatrix(temp4, 2, 2);
 
 
-        multiplyMatricesAux(x_mat, matrix, temp1, 3, 3, 3, 3);
-        multiplyMatricesAux(y_mat, matrix, temp1, 3, 3, 3, 3);
-        multiplyMatricesAux(z_mat, matrix, temp1, 3, 3, 3, 3);
+        multiplyMatricesAux(temp4, coordmatrix, temp1, 2, 2, 2, 2);
 
-        //printMatrix(matrix, 3, 3);
-        //fprintf(sterr, "deep");
-        if(i % 22 == 21){
-            //fprintf(stderr, "argh");
-            //multiplyMatricesAux(matrix, tangent, tangent2, 3, 3, 3, 1);
-            //printMatrix(tangent, 3, 1);
-            //fprintf(stderr, "%f \n", log(mat_norm(matrix, 3, 1))/(i/11));
-            //pprint(p);
-        }
     }
-    //fprintf(stderr, "MADE IT");
-    //printMatrix(tangent, 3, 1);
-    //multiplyMatricesAux(matrix, tangent, tangent2, 3, 3, 3, 1);
-    //printMatrix(tangent, 3, 1);
-   //fprintf(stderr, "matrix is \n");
-    //printMatrix(matrix, 3, 3);
 
-
+    fprintf(stderr, "Df^{22}_{x_0} =  \n");
+    printMatrix(matrix, 3, 3);
+    fprintf(stderr, "(Df^c)^{22}_{x_0} =  \n");
+    printMatrix(coordmatrix, 2, 2);
 	exit(0);
 }
 
@@ -296,7 +298,20 @@ void usage()
 }
 
 
-double px(double s, double t) {
+double D1(point p){
+    double vx = 2*p.x*(1+p.y*p.y)*(1+p.z*p.z)+A*p.y*p.z;
+	return vx*vx;
+}
+double D2(point p){
+    double vy = 2*p.y*(1+p.x*p.x)*(1+p.z*p.z)+A*p.x*p.z;
+	return vy*vy;
+}
+double D3(point p){
+    double vz = 2*p.z*(1+p.y*p.y)*(1+p.x*p.x)+A*p.x*p.y;
+	return vz*vz;
+}
+
+double px(double s, double t) { //specific for A=10, B = 2. 
     double numerator = s * (-2 + 23 * t * t) - s * s * s * (2 + 27 * t * t) - 
                        5 * t * sqrt(1 - t * t * t * t - s * s * s * s * (1 + t * t) * (1 + t * t) + s * s * (23 * t * t - 2 * t * t * t * t)) + 
                        5 * s * s * t * sqrt(1 - t * t * t * t - s * s * s * s * (1 + t * t) * (1 + t * t) + s * s * (23 * t * t - 2 * t * t * t * t));
@@ -307,10 +322,38 @@ double px(double s, double t) {
     return numerator / denominator;
 }
 
-double py(double s, double t) {
+double py(double s, double t) { 
     return px(t,s);
 }
 
+int chart(point p){
+    double d1 = D1(p);
+    double d2 = D2(p);
+    double d3 = D3(p);
+
+    if (d1 >= d2 && d1 >= d3) {
+        if(topx(p)){
+            return 3;
+        } else{
+            return 6;
+        }
+    } else if (d2 >= d1 && d2 >= d3) {
+        if(topy(p)){
+            return 2;
+        } else{
+            return 5;
+        }
+    } else {
+        if(top(p)){
+            return 1;
+        } else{
+            return 4;
+        }
+    }
+    return 0;
+}
+
+/* TO DELETE:
 double pxx(double s, double t) {
     double term1 = pow((200 * s * t * t + 16 * s * (1 + t * t) - 16 * s * (1 + s * s) * pow(1 + t * t, 2)), 2) / 
                    (4 * pow((100 * s * s * t * t + 8 * (1 + s * s) * (1 + t * t) - 4 * pow((1 + s * s), 2) * pow((1 + t * t), 2)), 1.5));
@@ -338,16 +381,12 @@ double pxy(double s, double t) {
     double term1 = (200 * s * s * t + 16 * (1 + s * s) * t - 16 * pow((1 + s * s), 2) * t * (1 + t * t)) * 
                    (200 * s * t * t + 16 * s * (1 + t * t) - 16 * s * pow((1 + s * s), 2) * pow((1 + t * t), 2));
     
+
     double term2 = 4 * pow((100 * s * s * t * t + 8 * (1 + s * s) * (1 + t * t) - 4 * pow((1 + s * s), 2) * pow((1 + t * t), 2)), 1.5);
-    
     double term3 = 432 * s * t - 64 * s * (1 + s * s) * t * (1 + t * t);
-    
     double term4 = 2 * sqrt(100 * s * s * t * t + 8 * (1 + s * s) * (1 + t * t) - 4 * pow((1 + s * s), 2) * pow((1 + t * t), 2));
-    
     double term5 = s * (-10 * s + (200 * s * s * t + 16 * (1 + s * s) * t - 16 * pow((1 + s * s), 2) * t * (1 + t * t)) / term4);
-    
     double term6 = t * (-10 * t + (200 * s * t * t + 16 * s * (1 + t * t) - 16 * s * pow((1 + s * s), 2) * pow((1 + t * t), 2)) / term4);
-    
     double term7 = 2 * s * t * (-10 * s * t + sqrt(100 * s * s * t * t + 8 * (1 + s * s) * (1 + t * t) - 4 * pow((1 + s * s), 2) * pow((1 + t * t), 2)));
     
     double denominator = 2 * (1 + s * s) * (1 + t * t);
@@ -356,26 +395,33 @@ double pxy(double s, double t) {
 }
 
 int chart(point p){
+
     if(top(p)){
         if(fabs(px(p.x, p.y)) < alpha && fabs(py(p.x, p.y)) < alpha && fabs(pxx(p.x, p.y)) < beta && fabs(pxy(p.x, p.y)) < beta && fabs(pyy(p.x, p.y)) < beta) {
             return 1;
         }
-        if(fabs(px(p.x, p.z)) < alpha && fabs(py(p.x, p.z)) < alpha && fabs(pxx(p.x, p.z)) < beta && fabs(pxy(p.x, p.z)) < beta && fabs(pyy(p.x, p.z)) < beta) {
-            return 2;
+    } else{
+        if(fabs(px(-p.x, p.y)) < alpha && fabs(py(-p.x, p.y)) < alpha && fabs(pxx(-p.x, p.y)) < beta && fabs(-pxy(p.x, p.y)) < beta && fabs(-pyy(p.x, p.y)) < beta) {
+            return 4;
         }
+    }
+    if(topx(p)){
         if(fabs(px(p.y, p.z)) < alpha && fabs(py(p.y, p.z)) < alpha && fabs(pxx(p.y, p.z)) < beta && fabs(pxy(p.y, p.z)) < beta && fabs(pyy(p.y, p.z)) < beta) {
             return 3;
         }
     } else{
-        //fprintf(stderr, "made it");
-        if(fabs(px(-p.x, p.y)) < alpha && fabs(py(-p.x, p.y)) < alpha && fabs(pxx(-p.x, p.y)) < beta && fabs(-pxy(p.x, p.y)) < beta && fabs(-pyy(p.x, p.y)) < beta) {
-            return 4;
-        }
-        if(fabs(px(-p.x, p.z)) < alpha && fabs(py(-p.x, p.z)) < alpha && fabs(pxx(-p.x, p.z)) < beta && fabs(-pxy(p.x, p.z)) < beta && fabs(-pyy(p.x, p.z)) < beta) {
-            return 5;
-        }
         if(fabs(px(-p.y, p.z)) < alpha && fabs(py(-p.y, p.z)) < alpha && fabs(pxx(-p.y, p.z)) < beta && fabs(-pxy(p.y, p.z)) < beta && fabs(-pyy(p.y, p.z)) < beta) {
             return 6;
+        }
+    }
+
+    if(topy(p)){
+        if(fabs(px(p.x, p.z)) < alpha && fabs(py(p.x, p.z)) < alpha && fabs(pxx(p.x, p.z)) < beta && fabs(pxy(p.x, p.z)) < beta && fabs(pyy(p.x, p.z)) < beta) {
+            return 2;
+        }
+    } else{
+        if(fabs(px(-p.x, p.z)) < alpha && fabs(py(-p.x, p.z)) < alpha && fabs(pxx(-p.x, p.z)) < beta && fabs(-pxy(p.x, p.z)) < beta && fabs(-pyy(p.x, p.z)) < beta) {
+            return 5;
         }
     }
     return 0;
@@ -384,3 +430,4 @@ int chart(point p){
 
 
 //notice: p_+(-x, y) = -p_-(x,y)
+*/

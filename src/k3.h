@@ -15,6 +15,7 @@ void init_color_map(), init_surface(), orbit(), random_orbits(), usage(),
 void ps_line(point p, point q, int unravel), di(point *ps, int n), setsep(double s), draw_path(int n), draw_manifold(), ps_close();
 
 /*Ethan's additions start*/
+point grad(point p);
 bool is_recurrent(point p);
 void recurrent_search();
 void search_near(point p, double epsilon, int N);
@@ -71,7 +72,8 @@ point newton(point p);
 
 
 int top(point p), unreal(double x, double y);
-
+int topx(point p);
+int topy(point p);
 
 /* K3 surface parameters */
 #define A 10.0

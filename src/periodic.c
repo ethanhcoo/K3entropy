@@ -48,8 +48,10 @@ void dist_exact(mpf_t result, mpf_point p1, mpf_point p2);
 void copy_point(mpf_point *dest, const mpf_point *src);
 bool is_recurrent_exact(mpf_point p, mpf_t delta);
 void search_near_exact(mpf_point *q, mpf_t epsilon, mpf_t delta, int N);
+void search_near_exact_line(mpf_point *q, mpf_t epsilon, mpf_t delta, int N);
 void lift_exact(mpf_point *p,  mpf_t x,  mpf_t y);
 bool unreal_exact( mpf_t x,  mpf_t y);
+void lift_exact_y(mpf_point *p,  mpf_t x,  mpf_t z);
 
 mpf_t ae, be;
 
@@ -140,61 +142,64 @@ int main(int argc, char *argv[]) {
 
 	//close postscript file
 	//ps_close();
+	/*
+	point p;
+	p.x = -1.72122700000000000000;
+	p.y = 1.07494096536647620365;
+	p.z =  1.72122700000000000000;
+	for(int i = 0; i < 7; i++){
+		pprint(p);
+		p = f(p);
+	}
+	//abort(); */
+	
 
+	mpf_set_default_prec(30); //change to 167 later
+    mpf_t x, z, y, s, result, epsilon, delta;
+    mpf_inits(x, z, s,y, ae, be, result, epsilon, delta, NULL);
+	
 
+	mpf_set_str(x, "1.52907383338851075638", 10);
+	mpf_set_str(z, "1.52907383338931296461", 10);
+	mpf_set_str(y, "0", 10);
 
-	mpf_set_default_prec(80); //change to 167 later
-	// Initialize variables
-	//abort();
-    mpf_t x, y, z, s, result, epsilon, delta;
-	//abort();
-    mpf_inits(x, y, z, s, ae, be, result, epsilon, delta, NULL);
-
-    // Set values for x, y, z, and a
-    mpf_set_str(x, "0.96018000000000000000", 10);
-    mpf_set_str(y, "-2.00341000000000000000", 10);
-    mpf_set_str(z, ".8931", 10);
-    mpf_set_str(s, "4.5", 10);
+	mpf_set_str(s, "4.5", 10);
 	mpf_set_str(ae, "10", 10);
 	mpf_set_str(be, "2", 10);
-    // Call the involute function
-	//abort();
-    //involute_exact(z, y, x);
-	//gmp_fprintf(stderr, "Result: (%.50Ff)\n", x);
-    // Print the result to a file
-	if(!unreal_exact(x,y)){
-		fprintf(stderr, "real");
-	}
-	mpf_point test;
-	init_point(&test);
-	lift_exact(&test, x, y);
-	gmp_fprintf(stderr, "tester is: (%.50Ff)\n", test.z);
-	if(!unreal_exact(x,y)){
-		fprintf(stderr, "real \n");
-	}
+
+
+	mpf_neg(z,z);  
 	
+	//mpf_set_str(x, "0.89407411600000000000", 10); these were working before
+	//mpf_set_str(y, "0.00459969000000000000", 10);
+    
 
 	mpf_point point;
 	mpf_point point2;
     init_point(&point);
 	init_point(&point2);
-    // Set values for the point
-    //mpf_set_str(point.x, "0.32491754140370000000", 10); //use x and y from above
-    //mpf_set_str(point.y, "0.00428442239290000000", 10);
-    //mpf_set_str(point.z, ".89316291607056474966", 10);
-	mpf_set_str(epsilon, "1e-6", 10);
-	mpf_set_str(delta, "1e-8", 10);
-	lift_exact(&point, x,y);
+	mpf_set_str(epsilon, "1e-13", 10);//10 is the base
+	mpf_set_str(delta, "1e-15", 10); //recurrence requirement
+	//mpf_set_str(epsilon, "1e-9", 10);
+	//mpf_set_str(delta, "1e-11", 10); //recurrence requirement
+
+	gmp_fprintf(stderr, "%.50Ff",x) ;
+	
+	lift_exact_y(&point, x, z);
+	iy_exact(&point);
+
+	gmp_fprintf(stderr, "starting point: (%.50Ff, %.50Ff, %.50Ff)\n", point.x, point.y, point.z);
+
+
+
 	copy_point(&point2, &point);
-	gmp_fprintf(stderr, "Result: (%.50Ff, %.50Ff, %.50Ff)\n", point.x, point.y, point.z);
-	//if(is_recurrent_exact(point2, delta)){
-	//	fprintf(stderr, "is recurrent\n");
-	//}
-	//if(is_recurrent(lift(.3249175414, 0.0042844224))){
-		//fprintf(stderr, "is recurrent\n");
-	//}
-	search_near_exact(&point, epsilon, delta, 5e3);
+
+	
+	search_near_exact_line(&point, epsilon, delta, 1e5);
+
 	abort();
+
+
   	//gmp_fprintf(stderr, "Result: (%.50Ff, %.50Ff, %.50Ff)\n", point.x, point.y, point.z);
 	f_exact(&point);
 	f_exact(&point);
@@ -204,7 +209,7 @@ int main(int argc, char *argv[]) {
 	//gmp_fprintf(stderr, "Distance is: %.260Ff\n", result);
 
     // Clear variables
-    mpf_clears(x, y, z, s, ae, be, result, NULL);
+    mpf_clears(x, z, s,y, ae, be, result, NULL);
 
 
 	exit(0);
@@ -248,7 +253,7 @@ bool is_recurrent(point p) /*returns true of p is delta, k-recurrent for some k<
 {
     double delta =  1e-5; // 1e-12;
 	point q = f(p);
-    for (int k = 1; k <= 32; k++) {
+    for (int k = 1; k <= 22; k++) {
 		//pprint(q);
 		if(dist(p, q) < delta) {
 			fprintf(stderr, "(%d)\n", k);
@@ -384,27 +389,32 @@ void dist_exact(mpf_t result, mpf_point p1, mpf_point p2) {
     mpf_clears(dx, dy, dz, sum, NULL);
 }
 
-bool is_recurrent_exact(mpf_point p, mpf_t delta) /*returns true of p is delta, k-recurrent for some k<=22*/
+bool is_recurrent_exact(mpf_point p, mpf_t delta) /*returns true of p is delta, k-recurrent for k <= 22*/
 {
+
 	mpf_t temp2;
 	mpf_init(temp2);
 	mpf_point temp;
 	init_point(&temp);
 	copy_point(&temp, &p);
 	//gmp_fprintf(stderr, "Result: (%.5Ff, %.5Ff, %.5Ff)\n", temp.x, temp.y, temp.z);
-	f_exact(&temp);
+	//f_exact(&temp); just commented this out! mar 1
     for (int k = 1; k <= 22; k++) {
 		//gmp_fprintf(stderr, "Result: (%.5Ff, %.5Ff, %.5Ff)\n", p.x, p.y, p.z);
-		dist_exact(temp2, p, temp);
-		//gmp_fprintf(stderr, "Result: (%.5Ff, %.5Ff, %.5Ff)\n", temp.x, temp.y, temp.z);
-		//gmp_fprintf(stderr, "distance is: (%.5Ff)\n",temp2);
-		if(mpf_cmp(temp2, delta) < 0) {
-			fprintf(stderr, "(%d)\n", k);
-			//gmp_fprintf(stderr, "Result: (%.5Ff, %.5Ff, %.5Ff)\n", temp.x, temp.y, temp.z);
-			return true;
-    	}
 		f_exact(&temp);	
+		//		fprintf(stderr, "(%d)\n", k)
     };
+	dist_exact(temp2, p, temp);
+	//gmp_fprintf(stderr, "Result: (%.5Ff, %.5Ff, %.5Ff)\n", temp.x, temp.y, temp.z);
+	//gmp_fprintf(stderr, "distance is: (%.5Ff)\n",temp2);
+	if(mpf_cmp(temp2, delta) < 0) {
+		//gmp_fprintf(stderr, "Result: (%.5Ff, %.5Ff, %.5Ff)\n", temp.x, temp.y, temp.z);
+		mpf_clears(temp2, NULL);
+
+		return true;
+	}
+	mpf_clears(temp2, NULL);
+	
     return false;
 }
 
@@ -439,7 +449,8 @@ bool unreal_exact( mpf_t x,  mpf_t y) {
 		return false;
 	}
 }
-void lift_exact(mpf_point *p,  mpf_t x,  mpf_t y) {
+void lift_exact(mpf_point *p,  mpf_t x,  mpf_t y) { //MAKE SURE TO THROW ERROR IF NOT REAL!
+
     mpf_t qa, qb, qc, temp1, temp2, sqrt_term;
 
     mpf_inits(qa, qb, qc, temp1, temp2, sqrt_term, NULL);
@@ -458,6 +469,7 @@ void lift_exact(mpf_point *p,  mpf_t x,  mpf_t y) {
     // qc = qa - b
     mpf_sub(qc, qa, be);
 
+
     // p.x = x
     mpf_set(p->x, x);
 
@@ -467,16 +479,34 @@ void lift_exact(mpf_point *p,  mpf_t x,  mpf_t y) {
     // p.z = (-qb + sqrt(qb*qb - 4*qa*qc)) / (2*qa)
     mpf_mul(temp1, qb, qb); // temp1 = qb * qb
     mpf_mul_ui(temp2, qa, 4); // temp2 = 4 * qa
+
     mpf_mul(temp2, temp2, qc); // temp2 = 4 * qa * qc
     mpf_sub(sqrt_term, temp1, temp2); // sqrt_term = qb*qb - 4*qa*qc
+
     mpf_sqrt(sqrt_term, sqrt_term); // sqrt_term = sqrt(qb*qb - 4*qa*qc)
+
     mpf_neg(qb, qb); // qb = -qb
     mpf_add(temp1, qb, sqrt_term); // temp1 = -qb + sqrt(qb*qb - 4*qa*qc)
     mpf_mul_ui(temp2, qa, 2); // temp2 = 2 * qa
     mpf_div(p->z, temp1, temp2); // p.z = temp1 / temp2
 
+
     mpf_clears(qa, qb, qc, temp1, temp2, sqrt_term, NULL);
+
 }
+void lift_exact_y(mpf_point *p,  mpf_t x,  mpf_t z) {
+	mpf_t temp0;
+	mpf_init(temp0);
+
+	lift_exact(p, x, z);
+	mpf_set(temp0, p->y); //swap y and z !!!
+	mpf_set(p->y, p->z);
+	mpf_set(p->z, temp0);
+
+	mpf_clears(temp0, NULL);
+}
+
+
 
 void search_near_exact(mpf_point *q, mpf_t epsilon, mpf_t delta, int N) {
     mpf_t x, y, temp;
@@ -516,6 +546,49 @@ void search_near_exact(mpf_point *q, mpf_t epsilon, mpf_t delta, int N) {
     }
 
     mpf_clears(x, y, temp, NULL);
+    //clear_point(&p);
+}
+
+
+//searches along line x = -z
+void search_near_exact_line(mpf_point *q, mpf_t epsilon, mpf_t delta, int N) {
+    mpf_t x, z, temp; //x_t & y_t used for substitution
+    mpf_point p;
+    int length = 2 * N;
+
+    mpf_inits(x, z, temp, NULL);
+    init_point(&p);
+
+    // x = q.x - N * epsilon
+    mpf_mul_ui(temp, epsilon, N);
+    mpf_sub(x, q->x, temp);
+    // y = q.y - N * epsilon
+    mpf_add(z, q->z, temp);
+	//gmp_fprintf(stderr, " at (%.20Ff, %.20Ff)\n", x,y);
+    for (int j = 0; j <= length; j++) {
+        if (!unreal_exact(x, z)) { //check unreal
+            
+			lift_exact_y(&p, x, z); //add lift
+
+			//gmp_fprintf(stderr, " at (%.20Ff, %.20Ff, %.20Ff)\n", p.x, p.y, p.z);
+			//gmp_fprintf(stderr, "tester at (%.20Ff, %.20Ff, %.20Ff)\n", p.x, p.y, p.z);
+            if (is_recurrent_exact(p, delta)) {
+				//fprintf(stderr, "made it!\n");
+                gmp_fprintf(stderr, "Success at (%.20Ff, %.20Ff, %.20Ff)\n", p.x, p.y, p.z);
+            }
+			//this bit checks bottoms as well: 
+			iy_exact(&p);
+			if (is_recurrent_exact(p, delta)) {
+				//fprintf(stderr, "made it!\n");
+                gmp_fprintf(stderr, "Success at (%.20Ff, %.20Ff, %.20Ff)\n", p.x, p.y, p.z);
+            }
+        }
+            // x = x + epsilon
+        mpf_add(x, x, epsilon);
+		mpf_sub(z, z, epsilon);
+	}
+        // x = q.x - N * epsilon
+    mpf_clears(x, z, temp, NULL);
     //clear_point(&p);
 }
 

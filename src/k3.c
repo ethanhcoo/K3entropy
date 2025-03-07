@@ -124,6 +124,22 @@ int top(p)
 	q = iz(p);
 	return(q.z <= p.z);
 }
+int topx(p)
+	point p;
+{
+	point q;
+
+	q = ix(p);
+	return(q.x <= p.x);
+}
+int topy(p)
+	point p;
+{
+	point q;
+
+	q = iy(p);
+	return(q.y <= p.y);
+}
 
 /* Defining equation of surface */
 double surf(p)
@@ -404,7 +420,7 @@ void Diz(point p, double **matrix) {
     matrix[1][0] = 0;
     matrix[1][1] = 1;
 	matrix[1][2] = 0;
-	matrix[2][0] = -a*p.y*(1-p.x*p.z)/((1 + p.y*p.y)*(1 + p.x*p.x)*(1 + p.x*p.x));
+	matrix[2][0] = -a*p.y*(1-p.x*p.x)/((1 + p.y*p.y)*(1 + p.x*p.x)*(1 + p.x*p.x)); //this has an arror you CUNT
     matrix[2][1] = -a*p.x*(1-p.y*p.y)/((1 + p.x*p.x)*(1 + p.y*p.y)*(1 + p.y*p.y));
 	matrix[2][2] = -1;
 }
@@ -445,11 +461,21 @@ void multiplyMatricesAux(double **firstMatrix, double **secondMatrix, double **r
 }
 
 void printMatrix(double **matrix, int ROWS1, int COLS1) {
-    for (int i = 0; i < ROWS1; ++i) {
-        for (int j = 0; j < COLS1; ++j) {
-            fprintf(stderr, "%f ", matrix[i][j]);
+    fprintf(stderr, "{");
+	for (int i = 0; i < ROWS1; ++i) {
+        fprintf(stderr, "{");
+		for (int j = 0; j < COLS1; ++j) {
+            fprintf(stderr, "%.15f", matrix[i][j]);//ethan changed to .15
+			if(j < COLS1-1){
+				fprintf(stderr, ",");
+			} 
         }
-        fprintf(stderr, "\n");
+		
+		if(i==ROWS1-1){
+			fprintf(stderr, "}}\n");
+		} else{
+			fprintf(stderr, "},\n");
+		}
     }
 }
 /* square of norm of a matrix */

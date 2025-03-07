@@ -1,2 +1,0 @@
-cd ..; cd src; make; cd ..; cd example; ./Periodic.run
-cd ..; cd src; make; cd ..; cd example; ./Periodic.run
