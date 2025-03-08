@@ -154,13 +154,16 @@ int main(int argc, char *argv[]) {
 	//abort(); */
 	
 
-	mpf_set_default_prec(30); //change to 167 later
+	mpf_set_default_prec(50); //change to 167 later
     mpf_t x, z, y, s, result, epsilon, delta;
     mpf_inits(x, z, s,y, ae, be, result, epsilon, delta, NULL);
 	
 
-	mpf_set_str(x, "1.52907383338851075638", 10);
-	mpf_set_str(z, "1.52907383338931296461", 10);
+	//mpf_set_str(x, "1.52907383338931296461", 10);
+	//mpf_set_str(z, "1.52907383338931296461", 10);
+
+	mpf_set_str(x, "-1.72689538537", 10);
+	mpf_set_str(z, "-1.72689538537", 10);
 	mpf_set_str(y, "0", 10);
 
 	mpf_set_str(s, "4.5", 10);
@@ -169,24 +172,21 @@ int main(int argc, char *argv[]) {
 
 
 	mpf_neg(z,z);  
-	
-	//mpf_set_str(x, "0.89407411600000000000", 10); these were working before
-	//mpf_set_str(y, "0.00459969000000000000", 10);
+
     
 
 	mpf_point point;
 	mpf_point point2;
     init_point(&point);
 	init_point(&point2);
-	mpf_set_str(epsilon, "1e-13", 10);//10 is the base
-	mpf_set_str(delta, "1e-15", 10); //recurrence requirement
+	mpf_set_str(epsilon, "1e-12", 10);//10 is the base //1e-13
+	mpf_set_str(delta, "1e-7", 10); //recurrence requirement //1e-15
 	//mpf_set_str(epsilon, "1e-9", 10);
 	//mpf_set_str(delta, "1e-11", 10); //recurrence requirement
 
 	gmp_fprintf(stderr, "%.50Ff",x) ;
 	
 	lift_exact_y(&point, x, z);
-	iy_exact(&point);
 
 	gmp_fprintf(stderr, "starting point: (%.50Ff, %.50Ff, %.50Ff)\n", point.x, point.y, point.z);
 
@@ -194,8 +194,8 @@ int main(int argc, char *argv[]) {
 
 	copy_point(&point2, &point);
 
-	
 	search_near_exact_line(&point, epsilon, delta, 1e5);
+	//search_near_exact_line(&point, epsilon, delta, 1e5);
 
 	abort();
 
@@ -399,7 +399,7 @@ bool is_recurrent_exact(mpf_point p, mpf_t delta) /*returns true of p is delta, 
 	copy_point(&temp, &p);
 	//gmp_fprintf(stderr, "Result: (%.5Ff, %.5Ff, %.5Ff)\n", temp.x, temp.y, temp.z);
 	//f_exact(&temp); just commented this out! mar 1
-    for (int k = 1; k <= 22; k++) {
+    for (int k = 1; k <= 10; k++) {
 		//gmp_fprintf(stderr, "Result: (%.5Ff, %.5Ff, %.5Ff)\n", p.x, p.y, p.z);
 		f_exact(&temp);	
 		//		fprintf(stderr, "(%d)\n", k)

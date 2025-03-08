@@ -91,9 +91,9 @@ int main(int argc, char *argv[]) {
 
 	
 	point p;
-    p.x = 1.52907383338931296461000000000000000000000000000000;
-    p.y = 0.51980719077651643300800000000000000000000000000000;
-    p.z = -1.52907383338931296461000000000000000000000000000000;
+    p.x = -1.726895448754;
+    p.y = 1.0416430939367222401;
+    p.z = 1.726895448754;
     
     //lift(0.89407411600000000000, 0.00459969000000000000);
     //point q = vtan(p);
@@ -173,7 +173,13 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    for(int i = 0; i < 22; i++){
+    for(int i = 0; i <10; i++){
+
+        pprint(p);
+        p = f(p);
+    }
+    int iter = 10;
+    for(int i = 0; i <iter; i++){
 
         double a, b;
         if(chart(p) == 1 || chart(p) == 4){
@@ -190,11 +196,16 @@ int main(int argc, char *argv[]) {
          }
 
         int k = 0;
+        int start = chart(p);
+        int end_temp;
+        if(i == 0){
+            end_temp = start;
+        }
         for(int i = 0; i < 3; i++){
-            if(i == 3-chart(p)){
+            if(i == 3-start){
                 temp4[i][0] = px(a, b);
                 temp4[i][1] = py(a, b);
-            } else if(i == 6-chart(p)){
+            } else if(i == 6-start){
                 temp4[i][0] = px(-a,b); //because p_+(-x,y) = -p_-(x,y)
                 temp4[i][1] = -py(-a,b); //because p_+(-x,y) = -p_-(x,y)
             } else{
@@ -215,11 +226,16 @@ int main(int argc, char *argv[]) {
             
         }
         k = 0;
+
+        int end = chart(f(p));
+        if(i==iter - 1){
+            end = end_temp; //forces the last chart to equal the first chart (comment out if p not an iter-pseudo-orbit)
+        }
         for(int j = 0; j < 3; j++){
-            if(j == 3-chart(f(p))){
+            if(j == 3-end){
                 temp5[0][j] = 0;
                 temp5[1][j] = 0;
-            } else if(j == 6-chart(f(p))){
+            } else if(j == 6-end){
                 temp5[0][j] = 0;
                 temp5[1][j] = 0;
             } else{
@@ -243,6 +259,8 @@ int main(int argc, char *argv[]) {
         pprint(p);
         
         fprintf(stderr, "chart is %d \n", chart(p));
+        fprintf(stderr, "nect chart is %d \n", chart(f(p)));
+
 
         fprintf(stderr, "(D psi_%d)_{x_%d^c} =  \n", i,i);
         printMatrix(temp4, 3, 2);
@@ -273,10 +291,11 @@ int main(int argc, char *argv[]) {
 
     }
 
-    fprintf(stderr, "Df^{22}_{x_0} =  \n");
+    fprintf(stderr, "Df^{%d}_{x_0} =  \n", i+1);
     printMatrix(matrix, 3, 3);
-    fprintf(stderr, "(Df^c)^{22}_{x_0} =  \n");
+    fprintf(stderr, "(Df^c)^{%d}_{x_0} =  \n", i+1);
     printMatrix(coordmatrix, 2, 2);
+    pprint(f(p));
 	exit(0);
 }
 

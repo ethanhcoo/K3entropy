@@ -95,15 +95,15 @@ int topy(point p);
 
 /* Epsilon for Newton convergence */
 #define NEWTONEPS 1e-12
-#define NEWTONMAX 100		/* Max number of steps */
+#define NEWTONMAX 10000		/* Max number of steps */ //ETHAN CHANGED FROM 100
 #define NEWTONCAUTION 1.0	/* Multiple of grad to follow */
 
 /* Subdivisions and point on stable manifold &  */
-#define SUBMAX 10000 //Ethan changed from 1000
+#define SUBMAX 100000 //Ethan changed from 1000
 #define PSMAX 3500000 //Ethan changed from 3500000
 
 /* Max separation of points in plot */
-#define SEP 0.02 /*Ethan changed it from 0.02*/
+#define SEP 0.002 /*Ethan changed it from 0.02*/
 
 /* Display extra info */
 #define VERBOSE 1

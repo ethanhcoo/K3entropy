@@ -10,7 +10,7 @@
 #define PAGEY 720       /* Offset of lower left corner */
 #define CORNX 36
 #define CORNY 36
-#define LINEWIDTH 1// was 0.20  /* Line width in device units */
+#define LINEWIDTH .2// was 0.20  /* Line width in device units */
 #define BORDER 0.10     /* Default border percentage */
 
 /* Defaults */
@@ -149,11 +149,11 @@ void ps_dot(point p, int unravel)/*Ethan added this. It draws a dot*/
 		return;
 	}
 	if(inside(p) && top(p)){
-		printf("%.5lf %.5lf .005 0 360 d\n", //originally .005, changed to 5e-7
+		printf("%.5lf %.5lf .03 0 360 d\n", //originally .005, changed to 5e-7
 		p.x,p.y);
 	}
 	if(inside(p) && !top(p)){
-		printf("%.5lf %.5lf .005 0 360 p\n", /*fist number controls dot size*/
+		printf("%.5lf %.5lf .03 0 360 p\n", /*fist number controls dot size*/
 		p.x,p.y);
 	}
 }
@@ -161,7 +161,7 @@ void ps_dot(point p, int unravel)/*Ethan added this. It draws a dot*/
 void ps_dot_transparent(point p)/*Ethan added this*/
 {
 	if(inside(p))
-		printf("%.5lf %.5lf .000003 0 360 b\n", //originally .003
+		printf("%.5lf %.5lf .003 0 360 b\n", //originally .003
 		p.x,p.y);
 }
 

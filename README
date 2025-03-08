@@ -1,7 +1,7 @@
 Some added Functionality to Curt McMullen's 'ORBITS OF AUTOMORPHISMS OF K3 SURFACES, Version 3.2 3/2006'
-Much of this ReadMe is a regurgitation of his ReadMe.
+Most of this ReadMe is a regurgitation of his ReadMe.
 
-See his program for instructions on how to use "Traj" and "Stable." 
+See his ReadMe for instructions on how to use "Traj" and "Stable." 
 
 QUICKSTART.
 Type "cd src; make" to install,
@@ -52,5 +52,8 @@ STABLE INPUT.  All input to stable is via command-line arguments.
 
 EXAMPLES.  See the example/ directory for usage.
 
+TROUBLESHOOTING
 
+IF: path length exceeded N
+THEN: increase eps, increase MaxPathlength
 

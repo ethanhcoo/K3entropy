@@ -95,7 +95,7 @@ point f(p)
 {
 	/* Ethan changed: originally was sym(ix(iy)iz) */
 	//iz(iy(ix(iz(iy(ix(p))))))
-	return iz(iy(ix(p)));  //iz(iy(ix(iz(iy(ix(p)))))); 
+	return iz(iy(ix(p))); //CAREFUL: ethan changed Mar4
 
 
 }

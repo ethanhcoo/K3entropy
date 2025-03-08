@@ -1,7 +1,7 @@
 
 #
 # Quick test of stable manifold plotting
-#.002 was working
+#.0005 was working
 
-../bin/mclass -r 3 -e .0005 -p 10 2 -l 3 -u | ps2pdf - > idk.pdf 
+../bin/mclass -r 10 -e .00002 -p 10 2 -l 3 | ps2pdf - > idk.pdf 
 open idk.pdf &

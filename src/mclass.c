@@ -13,15 +13,16 @@ static int drawtop = 1, drawbot = 1, verbose=VERBOSE, spin=0, unravel = 0;
 point ps[PSMAX];
 
 //very important for determine_arrays
-int pos_array[PSMAX]; //HOW BIG SHOULD I MAKE THESE??
+int pos_array[PSMAX]; 
 int above_array[PSMAX];
 
-int orbit_length = 22;
+int orbit_length = 10; //ALWAYS chenge this one
 const char *word[PSMAX];
 int above = -100000;
 int current_pos = -10000;
 
-
+int diagonal_path(double delta);
+int diagonal_path_near(point q, double delta);
 
 int main(int argc, char *argv[]) {
 	int i,n;
@@ -118,47 +119,146 @@ int main(int argc, char *argv[]) {
 	ps_open(argc,argv);
 	ps_window(centerx,centery,radius);
 	
+	point starter = lift(.1,.1);
+	draw_background(starter,20000);
+
+	
 	//draw stable manifold: this will no longer work since I changed f from sym(x(y(z))) to x(y(z)), and thus f no longer has a fixed point at (0,0,1).
 	// draw_manifold(); 
 
 	//draw background
-	point starter = lift(.1,.1);
+	//point starter = lift(.1,.1);
 	//draw_background(starter,20000);
 
 	// plot and store finite orbit
+
 	point marked_orbit[orbit_length];
-	point marked_point = lift(0.96018, -2.00341);
+	point marked_point;
+	marked_point.x = -1.726895448754;  // -1.5290738;
+	marked_point.z =  1.726895448754;
+	//  1.5290738;
+	marked_point.y = 1.04164309393672224018; //  0.519807190776516433008;
+	
+	//pprint(marked_point);
+	
+	plot_orbit(marked_orbit, marked_point, orbit_length);
+	//int well = diagonal_path(.0001);
+	int well = diagonal_path_near(marked_orbit[0], .0005);
+	n = well;
+	draw_path(n-2);
+
+	well = diagonal_path_near(marked_orbit[5], 5e-6);
+	n = well;
+	//draw_path(n-10000);
+
+	//n = n-2;
+	//for (int i = 0; i <11; ++i){
+	//	n=fpath(ps, n);
+	//}
+
+	n = n-2;
+	//draw_path(n);
+
+	for (int i = 0; i <5; ++i){
+		n=fpath(ps, n);
+	}
+	fprintf(stderr, "well is");
+	draw_path(n-2);
+
 
 	//for(int i = 0; i < 100; i++){
 		//pprint(marked_point);
 		///marked_point = f(marked_point);
 	//}
-	//abort();
-	//lift(1.41050, 0.57300);
-	//lift(1.52900, 0.17050);
-	//lift(1.00000, 0.50000);
-	//lift(2.00100, 0.96100);
-	plot_orbit(marked_orbit, marked_point, orbit_length);
-	for(int i = 0; i < orbit_length; i++){
-		pprint(marked_orbit[i]);
-	}
+
+	//plot_orbit(marked_orbit, marked_point, orbit_length);
+
+
+	//for (int i = 0; i <0; ++i){
+	//	n=fpath(ps, n);
+	//}
+
+	//fprintf(stderr, "well is");
+	//draw_path(n);
+	
+
+	ps_close(); // just added this
+	abort();
+
+	/*
+	point new;
+	new.x = -1.726895448754;
+	new.y = 1.04164309394337262919;
+	new.z = 1.726895448754;
+
+	point r;
+	r.x = 1;
+	r.y = 0;
+	r.z = 0;
+
+	point w1;
+	w1.x = 0;
+	w1.y = 1;
+	w1.z = 0;
+
+	point w2;
+	w2.x = 0;
+	w2.y = 0;
+	w2.z = 1;
+
+
+
+	point r_2;
+	r_2.x = 0.85903347;
+	r_2.y = 0.1471431405;
+	r_2.z = -0.85903347;
+
+	point r_1;
+	r_1.x = -0.85903347;
+	r_1.y = 0.1471431405;
+	r_1.z = 0.85903347;
+
+	marked_orbit[0] = f(r);
+	marked_orbit[1] = r_1;
+	marked_orbit[2] = f(r_2);
+	marked_orbit[3] = f(w1);
+	marked_orbit[4] = f(r_1);
+	marked_orbit[5] = r_2;
+	marked_orbit[6] = r;
+	marked_orbit[7] = w1;
+
+*/
+	
+fprintf(stderr, "done \n");
+
+	//for(int i = 0; i < orbit_length; i++){
+	//	ps_dot(marked_orbit[i], unravel);
+	//}
+
+	
 	fprintf(stderr, "done \n");
-	//sort finite_orbit
-	qsort(marked_orbit, orbit_length, sizeof(point), compare);
 
 	for(int i = 0; i < orbit_length; i++){
 		pprint(marked_orbit[i]);
 	}
+	fprintf(stderr, "done \n");
+	//sort finite_orbit UNCOMMENT THIS LATER
+	qsort(marked_orbit, orbit_length, sizeof(point), compare);
+
+	
+	
 		
 	//store x,y coordinates of finite orbit after normalization and stereo projection through 0,0,1
 	double x_vals[orbit_length];
 	double y_vals[orbit_length];
 
 	for(int i = 0; i < orbit_length; i++){
+		pprint(marked_orbit[i]);
 		x_vals[i] = transform(marked_orbit[i]).x;
 		y_vals[i] = transform(marked_orbit[i]).y;
 		fprintf(stderr, "( %f, %f)\n", x_vals[i], y_vals[i]);
 	}
+	//abort();*/
 	
 	fprintf(stderr, "Finite orbit stored\n");
 	
@@ -166,11 +266,17 @@ int main(int argc, char *argv[]) {
 	int example = 0;
 	int m = 1;
 	
+
+	for(int i = 0; i < orbit_length; i++){
+		pprint(marked_orbit[i]);
+	}
+
+
 	for(int i = 0; i < orbit_length-1; i++){ //orbit_length-1
 		fprintf(stderr, "starting %d\n ", i);
 		m = connect_path(marked_orbit[i], marked_orbit[i+1], 1); //1 meaning iterate f once. 
 		//for(int j = 0; j<m; j++){
-			//fprintf(stderr, "%f\n", transform(ps[j]).x);
+		//fprintf(stderr, "%f\n", transform(ps[j]).x);
 		//}
 		//abort();
 		//for()
@@ -189,6 +295,7 @@ int main(int argc, char *argv[]) {
 		
 	}
 	
+	fprintf(stderr, "MADE IT\n");
 	for(int k = 0; k < 20; k++){
 		fprintf(stderr, "(%d, %d)\n",pos_array[k], above_array[k]);
 	}
@@ -210,7 +317,6 @@ int main(int argc, char *argv[]) {
 			fprintf(stderr, "(%d, %d)\n", array_pos_testing[k][j], array_height_testing[k][j]);
 		}
 	}	
-	//abort();
 
 
 	//Creates temporary arrays to store path after contracting first through kth vertices
@@ -292,8 +398,45 @@ int main(int argc, char *argv[]) {
 			array_height[i][j] = a_array_height[i][j];
 			array_height_testing[i][j] = a_array_height[i][j];
 		}
+	}*/
+
+	//Test 3 tbd: 
+	/*
+	int a_array_pos[60][60] = {
+		{0, 1},
+		{1,2,3,4,4,3,2,2,3},
+		{3,2},
+		{2,3,3,2,2,3,4}
+		// The rest will be initialized to 0
+	};
+	int a_array_height[60][60] = {
+		{-1000, -1000},
+		{-1000,1,1,1,2,1,1,0, -1000},
+		{-1000, -1000},
+		{-1000,1,0,0,1,1, -1000}
+		// The rest will be initialized to 0
+	};
+	path_lengths[0] = 2;
+	path_lengths[1] = 9;
+	path_lengths[2] = 2;
+	path_lengths[3] = 7;
+	path_lengths_testing[0] = 2;
+	path_lengths_testing[1] = 9;
+	path_lengths_testing[2] = 2;
+	path_lengths_testing[3] = 7;
+	
+
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 60; j++) {
+			array_pos[i][j] = a_array_pos[i][j];
+			array_pos_testing[i][j] = a_array_pos[i][j];
+			array_height[i][j] = a_array_height[i][j];
+			array_height_testing[i][j] = a_array_height[i][j];
+		}
 	}
 	*/
+	//END TESTING CORNER
+	 
 
 	/*
 	int array[100] = {5, 4, 3, 2, -3, -2};
@@ -319,8 +462,8 @@ int main(int argc, char *argv[]) {
 		fprintf(stderr, "%d, %d\n", arr1[n], arr2[n]);
 	} 
 	
-	abort(); */
-
+	abort(); 
+	*/ //ETHAN JUST CHANGED THIS
 	//change orbit_length to 4
 
 	//abort();
@@ -537,20 +680,114 @@ int connect_path(point z, point w, int k) /*connects z and w by a straightline a
 	ps[1] = w;
 	n = dist(ps[0], ps[1])/sep;
 	ps[n] = ps[1]; 
-	subdivide_plane(ps[0], ps[1], ps, n); //edited so that initial path is just a path in the plane
+	//subdivide_plane(ps[0], ps[1], ps, n); //edited so that initial path is just a path in the plane
+	subdivide(ps[0], ps[1], ps, n);
 	for (int i = 0; i <k; ++i){
 		n=fpath(ps,n);
+	}
+	//draw_path(n); 
+	return n+1; //stuff Curt coded runs on size - 1. this returns size.
+}
+
+int diagonal_path(double delta) /*connects z and w by a straightline and gradient-flows to surface. Iterates path by f^k times. Returns array length( not, MINUS ONE).*/
+{
+	int n = 0;
+	
+	double z = 0;
+	double x = -3.0;
+	double y = 3.0;
+	point p;
+	while(unreal(x,y)){
+		x = x + delta;
+		y = y - delta;
+	}
+	
+	double swap;
+
+	while(!unreal(x,y)){
+		p = lift(x,y);
+		swap = p.z;
+		p.z = p.y;
+		p.y = swap;
+		ps[n] = p;
+		x = x + delta;
+		y = y - delta;
+		n++;
+		//lenth of ps ++
+	}
+
+	while(unreal(x,y)){
+		x = x - delta;
+		y = y + delta;
+	}
+
+	while(!unreal(x,y)){
+		p = lift(x,y);
+		p = iz(p);
+		swap = p.z;
+		p.z = p.y;
+		p.y = swap;
+		ps[n] = p;
+		x = x - delta;
+		y = y + delta;
+		n++;
+		//lenth of ps ++
+	}
+	ps[n] = ps[0];
+	ps[n+1] = ps[1];
+	//draw_path(n); 
+	return n+1; //stuff Kurt coded runs on size - 1. this returns size.
+}
+
+int diagonal_path_near(point q, double delta) /*connects z and w by a straightline and gradient-flows to surface. Iterates path by f^k times. Returns array length( not, MINUS ONE).*/
+{
+	int n = 0;
+	int l = 0;
+
+	pprint(q);
+	double z = 0;
+	double x = q.x - 100*delta;
+	double y = q.z + 100*delta;
+	point p;
+	while(unreal(x,y)){
+		x = x + delta;
+		y = y - delta;
+	}
+	
+	double swap;
+	point temp = iy(q);
+	while((!unreal(x,y)) && l < 201){
+		p = lift(x,y);
+		if(q.y <  temp.y){
+			p = iz(p);
+		}
+		swap = p.z;
+		p.z = p.y;
+		p.y = swap;
+		
+		ps[n] = p;
+		x = x + delta;
+		y = y - delta;
+		n++;
+		l++;
+		//lenth of ps ++
 	}
 	//draw_path(n); 
 	return n+1; //stuff Kurt coded runs on size - 1. this returns size.
 }
 
+
+
+
+
 void plot_orbit(point marked_orbit[], point z, int n)/*Ethan added this*/
 {
 	marked_orbit[0] = z;
+	pprint(z);
 	for (int i = 0; i<n; i++){
 		marked_orbit[i] = z;
 		ps_dot(z, unravel);
+		pprint(z);
 		z = f(z);
 	}
 }
