@@ -1,0 +1,2 @@
+../bin/RecurrentOrbit -c 0.3249175414, 0.0042844224 -r 1e-5 -e 4e-7 -p 10 2 -l 3 > Periodic.txt
+open Periodic.txt &

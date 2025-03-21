@@ -2,6 +2,7 @@
 #
 # Quick test of stable manifold plotting
 #.0005 was working
+#.00002 for curveintersection
 
-../bin/mclass -r 10 -e .00002 -p 10 2 -l 3 | ps2pdf - > idk.pdf 
+../bin/mclass -r 10 -e .0002 -p 10 2 -l 3 | ps2pdf - > idk.pdf 
 open idk.pdf &

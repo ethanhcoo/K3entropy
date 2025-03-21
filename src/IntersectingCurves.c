@@ -134,28 +134,21 @@ int main(int argc, char *argv[]) {
 
 	point marked_orbit[orbit_length];
 	point marked_point;
-	//length 10:
 	marked_point.x = -1.726895448754;  // -1.5290738;
 	marked_point.z =  1.726895448754;
+	//  1.5290738;
 	marked_point.y = 1.04164309393672224018; //  0.519807190776516433008;
-
-	//marked_point.x =-0.716030343396581;  
-	//marked_point.z = 0.716030343396581;
-	//marked_point.y = 0.05771034974248861245;
 	
+	//pprint(marked_point);
 	
 	plot_orbit(marked_orbit, marked_point, orbit_length);
-
-	ps_close();
-	abort();
-
 	//int well = diagonal_path(.0001);
-	//int well = diagonal_path_near(marked_orbit[0], .0005);
-	//n = well;
-	//draw_path(n-2);
+	int well = diagonal_path_near(marked_orbit[0], .0005);
+	n = well;
+	draw_path(n-2);
 
-	//well = diagonal_path_near(marked_orbit[5], 5e-6);
-	//n = well;
+	well = diagonal_path_near(marked_orbit[5], 5e-6);
+	n = well;
 	//draw_path(n-10000);
 
 	//n = n-2;
@@ -163,14 +156,14 @@ int main(int argc, char *argv[]) {
 	//	n=fpath(ps, n);
 	//}
 
-	//n = n-2;
+	n = n-2;
 	//draw_path(n);
 
-	//for (int i = 0; i <5; ++i){
-		//n=fpath(ps, n);
-	//}
-	//fprintf(stderr, "well is");
-	//draw_path(n-2);
+	for (int i = 0; i <5; ++i){
+		n=fpath(ps, n);
+	}
+	fprintf(stderr, "well is");
+	draw_path(n-2);
 
 
 	//for(int i = 0; i < 100; i++){
@@ -189,8 +182,8 @@ int main(int argc, char *argv[]) {
 	//draw_path(n);
 	
 
-	//ps_close(); // just added this
-	//abort();
+	ps_close(); // just added this
+	abort();
 
 	/*
 	point new;
@@ -236,42 +229,22 @@ int main(int argc, char *argv[]) {
 
 */
 	
+fprintf(stderr, "done \n");
 
 	//for(int i = 0; i < orbit_length; i++){
 	//	ps_dot(marked_orbit[i], unravel);
 	//}
 
 	
+	fprintf(stderr, "done \n");
 
 	for(int i = 0; i < orbit_length; i++){
 		pprint(marked_orbit[i]);
 	}
+	fprintf(stderr, "done \n");
 	//sort finite_orbit UNCOMMENT THIS LATER
 	qsort(marked_orbit, orbit_length, sizeof(point), compare);
 
-	/*
-	point copy0 = marked_orbit[0];
-	point copy1 = marked_orbit[1];
-	point copy2 = marked_orbit[2];
-	point copy3 = marked_orbit[3];
-	point copy4 = marked_orbit[4];
-	point copy5 = marked_orbit[5];
-	point copy6 = marked_orbit[6];
-	point copy7 = marked_orbit[7];
-	point copy8 = marked_orbit[8];
-	point copy9 = marked_orbit[9];
-
-	marked_orbit[0] = copy2;
-	marked_orbit[1] = copy0;
-	marked_orbit[2] = copy1;
-	marked_orbit[3] = copy4;
-	marked_orbit[4] = copy3;
-	marked_orbit[5] = copy9;
-	marked_orbit[6] = copy6;
-	marked_orbit[7] = copy5;
-	marked_orbit[8] = copy7;
-	marked_orbit[9] = copy8;
-	*/
 	
 	
 		
@@ -290,7 +263,7 @@ int main(int argc, char *argv[]) {
 	fprintf(stderr, "Finite orbit stored\n");
 	
 	//draws straight-line path between q-sorted marked points. Takes its image inder f^2 and record path data
-	int example = 5;
+	int example = 0;
 	int m = 1;
 	
 
@@ -311,7 +284,6 @@ int main(int argc, char *argv[]) {
 		
 		
 		draw_path(m-1);
-	
 		
 		
 		 //minus 1 since curt has different conventions
@@ -322,7 +294,6 @@ int main(int argc, char *argv[]) {
 		determine_arrays(x_vals, y_vals, array_pos_testing[i], array_height_testing[i], &m, marked_orbit, &path_lengths_testing[i]);  
 		
 	}
-	//abort();
 	
 	fprintf(stderr, "MADE IT\n");
 	for(int k = 0; k < 20; k++){
@@ -709,8 +680,8 @@ int connect_path(point z, point w, int k) /*connects z and w by a straightline a
 	ps[1] = w;
 	n = dist(ps[0], ps[1])/sep;
 	ps[n] = ps[1]; 
-	subdivide_plane(ps[0], ps[1], ps, n); //edited so that initial path is just a path in the plane
-	//subdivide(ps[0], ps[1], ps, n);
+	//subdivide_plane(ps[0], ps[1], ps, n); //edited so that initial path is just a path in the plane
+	subdivide(ps[0], ps[1], ps, n);
 	for (int i = 0; i <k; ++i){
 		n=fpath(ps,n);
 	}

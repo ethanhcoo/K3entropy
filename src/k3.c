@@ -80,12 +80,13 @@ double involute(x,y,z)
 	return(z);
 }
 
-/* Symmetry (x,y,z) -> (x,-y,-z) */
+/* Symmetry (x,y,z) -> (-z,y,-x) */ //Ehan changed this
 point sym(p)
 	point p;
 {
-	p.y = -p.y;
-	p.z = -p.z;
+	double temp = p.z;
+	p.z = -p.x;
+	p.x = -temp;
 	return(p);
 }
 

@@ -10,7 +10,7 @@
 #define PAGEY 720       /* Offset of lower left corner */
 #define CORNX 36
 #define CORNY 36
-#define LINEWIDTH .2// was 0.20  /* Line width in device units */
+#define LINEWIDTH .02// was 0.20  /* Line width in device units */
 #define BORDER 0.10     /* Default border percentage */
 
 /* Defaults */
@@ -18,16 +18,18 @@ static double linewidth=LINEWIDTH;
 double size, xmax, xmin, ymax, ymin;
 
 point normalize(point p){
-	p.x = p.x/(1 + norm(p));
-	p.y = p.y/(1 + norm(p));
-	p.z = p.z/(1 + norm(p));
+	double temp = sqrt(norm(p));
+	p.x = p.x/(1+temp);
+	p.y = p.y/(1+temp);
+	p.z = p.z/(1 + temp);
 
-	p.x = p.x*pow(norm(p), 0);
-	p.y = p.y*pow(norm(p), 0);
-	p.z = p.z*pow(norm(p), 0);
+	temp = sqrt(norm(p));
+	p.x = p.x*pow(temp, 0);
+	p.y = p.y*pow(temp, 0);
+	p.z = p.z*pow(temp, 0);
 
-	p.x = p.x*1;
-	p.y = p.y*1;
+	p.x = p.x*2;
+	p.y = p.y*.5;
 	p.z = p.z*1;
 
 	return p;
@@ -122,7 +124,11 @@ void ps_line(point p,point q, int unravel)
 		}
 		return;
 	}
+	
+
 	if(inside(p) || inside(q)){
+		//p = rescale(p); //Ethan added for sphere
+		//q = rescale(q);
 		printf("%.5lf %.5lf %.5lf %.5lf l\n",
 		p.x,p.y,q.x,q.y);
 	}
@@ -133,8 +139,13 @@ void ps_line_color(point p, point q, int unravel) /*Ethan added this. It draws a
 	if(unravel){
 		p = normalize(stereo_proj(rescale(p)));
 		q = normalize(stereo_proj(rescale(q)));
+	} else{
+		//p = rescale(p); //Ethan added for sphere
+		//q = rescale(q); //Ethan added for sphere
 	}
+	
 	if(inside(p) || inside(q)){
+		
 			printf("%.5lf %.5lf %.5lf %.5lf o\n",
 			p.x,p.y,q.x,q.y);
 		}
@@ -147,6 +158,8 @@ void ps_dot(point p, int unravel)/*Ethan added this. It draws a dot*/
 		printf("%.5lf %.5lf .005 0 360 d\n", //ethan added
 		p.x,p.y);
 		return;
+	} else{
+		//p = rescale(p); //Ethan added for sphere
 	}
 	if(inside(p) && top(p)){
 		printf("%.5lf %.5lf .03 0 360 d\n", //originally .005, changed to 5e-7

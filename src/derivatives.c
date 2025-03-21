@@ -23,6 +23,13 @@ double pxx(double s, double t);//partial_xx p
 double pxy(double s, double t);//partial_xy p
 double pyy(double s, double t);//partial_yy p
 int chart(point p); //outputs a chart, labelled 1-6, which p belongs to (p might belong to two charts)
+double D(double x, double y);
+double Dx(double x, double y);//partial_x D
+double Dy(double x, double y);//partal_y D
+double Dxx(double x, double y);//partial_xx D
+double Dxy(double x, double y);//partial_xy D
+double Dyy(double x, double y);//partial_xx D
+
 double D1(point p);
 double D2(point p);
 double D3(point p);
@@ -173,11 +180,11 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    for(int i = 0; i <10; i++){
+    //for(int i = 0; i <10; i++){
 
-        pprint(p);
-        p = f(p);
-    }
+        //pprint(p);
+        //p = f(p);
+    //}
     int iter = 10;
     for(int i = 0; i <iter; i++){
 
@@ -194,6 +201,15 @@ int main(int argc, char *argv[]) {
             a = p.y;
             b = p.z;
          }
+
+        fprintf(stderr, "(x,y) is (%f, %f) \n", a,b);
+        fprintf(stderr, "D(x,y) is %f \n", D(a,b));
+        fprintf(stderr, "Dx(x,y) is %f \n", Dx(a,b));
+        fprintf(stderr, "Dy(x,y) is %f \n", Dy(a,b));
+        fprintf(stderr, "Dxx(x,y) is %f \n", Dxx(a,b));
+        fprintf(stderr, "Dyy(x,y) is %f \n", Dyy(a,b));
+        fprintf(stderr, "Dxy(x,y) is %f \n", Dxy(a,b));
+
 
         int k = 0;
         int start = chart(p);
@@ -255,17 +271,17 @@ int main(int argc, char *argv[]) {
             }
         }
         //Print Results
-        fprintf(stderr, "x_%d =  \n", i);
-        pprint(p);
+        //fprintf(stderr, "x_%d =  \n", i);
+        //(p);
         
         fprintf(stderr, "chart is %d \n", chart(p));
-        fprintf(stderr, "nect chart is %d \n", chart(f(p)));
+        //fprintf(stderr, "nect chart is %d \n", chart(f(p)));
 
 
-        fprintf(stderr, "(D psi_%d)_{x_%d^c} =  \n", i,i);
-        printMatrix(temp4, 3, 2);
-        fprintf(stderr, "(D phi_{k_%d})_{x_{%d}} =  \n", i+1, i+1);
-        printMatrix(temp5, 2, 3);
+        //fprintf(stderr, "(D psi_%d)_{x_%d^c} =  \n", i,i);
+        //printMatrix(temp4, 3, 2);
+        //fprintf(stderr, "(D phi_{k_%d})_{x_{%d}} =  \n", i+1, i+1);
+        //printMatrix(temp5, 2, 3);
 
         Dix(p, x_mat); 
         p = ix(p);
@@ -276,8 +292,8 @@ int main(int argc, char *argv[]) {
 
         multiplyMatrices(y_mat, x_mat, temp2, 3, 3, 3, 3);
         multiplyMatrices(z_mat, temp2, temp3, 3, 3, 3, 3);
-        fprintf(stderr, "(Df}_{x_%d} =  \n", i);
-        printMatrix(temp3, 3, 3);
+        //fprintf(stderr, "(Df}_{x_%d} =  \n", i);
+       //printMatrix(temp3, 3, 3);
 
         multiplyMatricesAux(temp3, matrix, temp1, 3, 3, 3, 3);
 
@@ -291,11 +307,11 @@ int main(int argc, char *argv[]) {
 
     }
 
-    fprintf(stderr, "Df^{%d}_{x_0} =  \n", i+1);
-    printMatrix(matrix, 3, 3);
-    fprintf(stderr, "(Df^c)^{%d}_{x_0} =  \n", i+1);
-    printMatrix(coordmatrix, 2, 2);
-    pprint(f(p));
+    //fprintf(stderr, "Df^{%d}_{x_0} =  \n", i+1);
+    //printMatrix(matrix, 3, 3);
+    //fprintf(stderr, "(Df^c)^{%d}_{x_0} =  \n", i+1);
+    //printMatrix(coordmatrix, 2, 2);
+    //pprint(f(p));
 	exit(0);
 }
 
@@ -315,6 +331,34 @@ void usage()
 	fprintf(stderr,"Postscript file written to stdout\n");
 	exit(1);
 }
+
+double D(double x, double y){
+    double new = 100*x*x*y*y + 8*(1+x*x)*(1+y*y) - 4*(1+x*x)*(1+x*x)*(1+y*y)*(1+y*y);
+	return new;
+}
+
+double Dx(double x, double y){
+    double new = 200*x*y*y + 16*x*(1 + y*y) - 16*x*(1 + x*x)*(1 + y*y)*(1+y*y);
+    return new;
+}
+
+double Dy(double x, double y){
+    double new = Dx(y,x);
+    return new;
+}
+double Dxx(double x, double y){
+    double new = 200*y*y + 16*(1 + y*y) - 32*x*x* (1 + y*y)*(1 + y*y) - 16*(1 + x*x)*(1 + y*y)*(1 + y*y);
+    return new;
+}
+double Dyy(double x, double y){
+    double new = Dxx(y,x);
+    return new;
+}
+double Dxy(double x, double y){
+    double new = 432*x*y - 64*x*(1 + x*x)*y*(1 + y*y);
+    return new;
+}
+
 
 
 double D1(point p){
@@ -372,7 +416,7 @@ int chart(point p){
     return 0;
 }
 
-/* TO DELETE:
+/* TO KEEP:
 double pxx(double s, double t) {
     double term1 = pow((200 * s * t * t + 16 * s * (1 + t * t) - 16 * s * (1 + s * s) * pow(1 + t * t, 2)), 2) / 
                    (4 * pow((100 * s * s * t * t + 8 * (1 + s * s) * (1 + t * t) - 4 * pow((1 + s * s), 2) * pow((1 + t * t), 2)), 1.5));
