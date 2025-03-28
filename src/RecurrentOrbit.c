@@ -1,7 +1,5 @@
 
-/* For finding recurrent points with controllable precision */
-
-
+/* A particular pseudo-orbit */
 #include <math.h>
 #include "k3.h"
 #include <math.h>
@@ -9,23 +7,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <gmp.h> //for precision orbits
-
-
-static double centerx = CENTERX, centery = CENTERY, radius = RADIUS;
-static double length=LENGTH, sep = SEP;
-static int drawtop = 1, drawbot = 1, verbose=VERBOSE, spin=0, unravel = 0;
-
-/* Very large array to dynamically store paths*/
-point ps[PSMAX];
-
-//very important for determine_arrays
-int pos_array[PSMAX]; //HOW BIG SHOULD I MAKE THESE??
-int above_array[PSMAX];
-
-int orbit_length = 23;
-const char *word[PSMAX];
-int above = -100000;
-int current_pos = -10000;
 
 //new point structure
 typedef struct {
@@ -56,70 +37,6 @@ void dist_2plane(mpf_t result, mpf_t a1, mpf_t b1, mpf_t a2, mpf_t b2);
 mpf_t ae, be;
 
 int main(int argc, char *argv[]) {
-	int i,n;
-	double a,b;
-
-	//read in values from stable.run
-	for(i=1; i<argc; i++)
-	{	if(argv[i][0] != '-') usage();
-		switch(argv[i][1])
-	{
-		case 'b':
-		drawtop = 0;
-		break;
-
-		case 'c':
-		if(argc <= (i+2)) usage();
-		sscanf(argv[++i],"%lf",&centerx);
-		sscanf(argv[++i],"%lf",&centery);
-		break;
-
-		case 'e':
-		if(argc <= (i+1)) usage();
-		sscanf(argv[++i],"%lf",&sep);
-		setsep(sep);
-		break;
-
-		case 'l':
-		if(argc <= (i+1)) usage();
-		sscanf(argv[++i],"%lf",&length);
-		break;
-
-		case 'p':
-		if(argc <= (i+2)) usage();
-		sscanf(argv[++i],"%lf",&a);
-		sscanf(argv[++i],"%lf",&b);
-		setk3(a,b);
-		break;
-
-		case 'q':
-		verbose = 0;
-		break;
-
-		case 'r':
-		if(argc <= (i+1)) usage();
-		sscanf(argv[++i],"%lf",&radius);
-		break;
-
-		case 's':
-		spin = 1;
-		break;
-
-		case 't':
-		drawbot = 0;
-		break;
-
-		case 'u': /*ethan added unravel*/
-		unravel = 1;
-		break;
-
-		default:
-		usage();
-	}
-	}
-
-	
-
 	mpf_set_default_prec(500); 
 
     mpf_t result, epsilon, delta, temp;
@@ -264,21 +181,6 @@ int main(int argc, char *argv[]) {
 
 }
 
-void usage()
-{
-	fprintf(stderr,"Usage:  stable [options]\n");
-	fprintf(stderr,"  -b          draw only bottom\n");
-	fprintf(stderr,"  -c [x y]    window center\n");
-	fprintf(stderr,"  -e [eps]    accuracy\n");
-	fprintf(stderr,"  -l [length] length of stable manifold drawn\n");
-	fprintf(stderr,"  -p [a b]    K3 parameters\n");
-	fprintf(stderr,"  -q          quiet\n");
-	fprintf(stderr,"  -r [r]      window radius\n");
-	fprintf(stderr,"  -s          spin picture\n");
-	fprintf(stderr,"  -t          draw only top\n");
-	fprintf(stderr,"Postscript file written to stdout\n");
-	exit(1);
-}
 
 void involute_exact(mpf_t x, mpf_t y, mpf_t z) {
     mpf_t temp1, temp2, temp3;
@@ -328,6 +230,7 @@ void f_exact(mpf_point *p)
 	iy_exact(p);
 	iz_exact(p);
 }
+
 void f_c(mpf_t s,  mpf_t t, int i, int j) {
 	mpf_point temp;
 	init_point(&temp);
@@ -372,68 +275,6 @@ void dist_2plane(mpf_t result, mpf_t a1, mpf_t b1, mpf_t a2, mpf_t b2) {
     mpf_clears(dx, dy, sum, NULL);
 }
 
-void projection_chart(mpf_point p, mpf_t a, mpf_t b, int i) {
-   if (i == 1 || i == 4) {
-		mpf_set(a, p.x);
-		mpf_set(b, p.y);
-   }
-   if (i == 2 || i == 5) {
-		mpf_set(a, p.x);
-		mpf_set(b, p.z);
-   }
-   if (i == 3 || i == 6) {
-		mpf_set(a, p.y);
-		mpf_set(b, p.z);
-   }
-}
-
-bool is_recurrent_exact_specific(mpf_t a, mpf_t b, mpf_t delta) /*returns true of p is delta, k-recurrent for k <= 22*/
-{
-	//fprintf(stderr, "ummm");
-	mpf_t temp2;
-	mpf_t a_start;
-	mpf_t b_start;
-	mpf_init(a_start);
-	mpf_init(b_start);
-	mpf_init(temp2);
-
-	mpf_set(a_start, a);
-	mpf_set(b_start, b);
-	
-	//gmp_fprintf(stderr, "(%.20Ff, %.20Ff)\n", a,b);
-	f_c(a, b, 6, 4);	
-	//gmp_fprintf(stderr, "(%.20Ff, %.20Ff)\n", a,b);
-	f_c(a, b, 4, 5);	
-	//gmp_fprintf(stderr, "(%.20Ff, %.20Ff)\n", a,b);
-
-	f_c(a, b, 5, 6);
-	//gmp_fprintf(stderr, "(%.20Ff, %.20Ff)\n", a,b);
-	
-	f_c(a, b, 6, 5);
-	//gmp_fprintf(stderr, "(%.20Ff, %.20Ff)\n", a,b);
-	
-	f_c(a, b, 5, 5);
-	//gmp_fprintf(stderr, "(%.20Ff, %.20Ff)\n", a,b);
-	
-	f_c(a, b, 5, 5);
-	//gmp_fprintf(stderr, "(%.20Ff, %.20Ff)\n", a,b);
-	
-	f_c(a, b, 5, 1);	
-	//gmp_fprintf(stderr, "(%.20Ff, %.20Ff)\n", a,b);
-
-	f_c(a, b, 1, 5);
-	//gmp_fprintf(stderr, "(%.20Ff, %.20Ff)\n", a,b);
-	
-	f_c(a, b, 5, 3);
-	//gmp_fprintf(stderr, "(%.20Ff, %.20Ff)\n", a,b);
-	
-	f_c(a, b, 3, 6);
-	//gmp_fprintf(stderr, "(%.20Ff, %.20Ff)\n", a,b);
-	
-	
-	mpf_clears(temp2, NULL);
-    return false;
-}
 
 
 bool unreal_exact( mpf_t x,  mpf_t y) {
@@ -467,6 +308,7 @@ bool unreal_exact( mpf_t x,  mpf_t y) {
 		return false;
 	}
 }
+
 void lift_exact(mpf_point *p,  mpf_t x,  mpf_t y) { //MAKE SURE TO THROW ERROR IF NOT REAL!
 
     mpf_t qa, qb, qc, temp1, temp2, sqrt_term;
@@ -597,52 +439,4 @@ void lift_exact_charts(mpf_point *p,  mpf_t a,  mpf_t b, int i) {
 
 
 
-
-
-//searches along line x = -z
-void search_near_exact_line(mpf_point *q, mpf_t epsilon, mpf_t delta, int N) {
-    mpf_t x, z, temp; //x_t & y_t used for substitution
-	mpf_t a,b;
-	mpf_inits(a,b, NULL);
-
-    mpf_point p;
-    int length = 2 * N;
-
-    mpf_inits(x, z, temp, NULL);
-    init_point(&p);
-
-    // x = q.x - N * epsilon
-    mpf_mul_ui(temp, epsilon, N);
-    mpf_sub(x, q->x, temp);
-    // y = q.y - N * epsilon
-    mpf_add(z, q->z, temp);
-    for (int j = 0; j <= length; j++) {
-        if (!unreal_exact(x, z)) { //check unreal
-            
-            lift_exact_charts(&p, x, z, 2); //add lift
-			projection_chart(p, a, b, 6);
-			/*using f, not f_c
-			if (is_recurrent_exact(p, delta)) {
-                gmp_fprintf(stderr, "Success at (%.20Ff, %.20Ff, %.20Ff)\n", p.x, p.y, p.z);
-            } */
-
-			if (is_recurrent_exact_specific(a,b, delta)) {
-                gmp_fprintf(stderr, "Success at (%.50Ff, %.50Ff, %.50Ff)\n", p.x, p.y, p.z);
-            }
-			projection_chart(p, a, b, 6);
-
-			/*
-			if (is_recurrent_exact(p, delta)) {			//this bit checks bottoms as well:
-                gmp_fprintf(stderr, "Success at (%.20Ff, %.20Ff, %.20Ff)\n", p.x, p.y, p.z);
-            } */
-
-        }
-            // x = x + epsilon
-        mpf_add(x, x, epsilon);
-		mpf_sub(z, z, epsilon);
-	}
-        // x = q.x - N * epsilon
-    mpf_clears(x, z, temp, NULL);
-    //clear_point(&p);
-}
 
