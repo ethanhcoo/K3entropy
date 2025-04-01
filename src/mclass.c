@@ -12,15 +12,21 @@ static int drawtop = 1, drawbot = 1, verbose=VERBOSE, spin=0, unravel = 0;
 //Very large array to dynamically store paths
 point ps[PSMAX];
 
-//very important for determine_arrays
+//Initialize arrays to path position data; used in determine_arrays
 int pos_array[PSMAX]; 
 int above_array[PSMAX];
 
-int orbit_length = 10; //ALWAYS chenge this one
+//Orbit_length is the order of the periodic point we are using
+int orbit_length = 10; 
+
+//Matrix for storing twist data
 const char *word[PSMAX];
+
+//Constants
 int above = -100000;
 int current_pos = -10000;
 
+//A few function prototypes for plotting {x = -z}
 int diagonal_path(double delta);
 int diagonal_path_near(point q, double delta);
 
@@ -28,7 +34,7 @@ int main(int argc, char *argv[]) {
 	int i,n;
 	double a,b;
 
-	//read in values from mclass.run
+	//Read-in values from mclass.run
 	for(i=1; i<argc; i++)
 	{	if(argv[i][0] != '-') usage();
 		switch(argv[i][1])
@@ -78,7 +84,7 @@ int main(int argc, char *argv[]) {
 		drawbot = 0;
 		break;
 
-		case 'u': /*ethan added unravel*/
+		case 'u': 
 		unravel = 1;
 		break;
 
@@ -90,15 +96,17 @@ int main(int argc, char *argv[]) {
 
 	//Creates arrays to record twists and keep track of its length.
 	char *twists_word[10000]; //twists as characters
-	int twists[10000]; //twist with integer coding. i = s_i. -i = S_{i-1}
+	int twists[10000]; //twist with integer coding, meaning i = s_i; -i = S_{i-1}
 	int twists_length = 0; //length of twist array
 
 	//Create (orbit_length-1) pos/height arrays to record paths 
 	int **array_pos = malloc((orbit_length-1) * sizeof(int*));
 	int **array_height = malloc((orbit_length -1) * sizeof(int*));
+	int path_lengths[orbit_length-1];
+
+	//Do the same for testing
 	int **array_pos_testing = malloc((orbit_length-1) * sizeof(int*));
 	int **array_height_testing = malloc((orbit_length -1) * sizeof(int*));
-	int path_lengths[orbit_length-1];
 	int path_lengths_testing[orbit_length-1];
 	
 	//Allocate memory for each array. second copy is for testing.
@@ -135,9 +143,9 @@ int main(int argc, char *argv[]) {
 	point marked_orbit[orbit_length];
 	point marked_point;
 	//length 10:
-	marked_point.x = -1.726895448754;  // -1.5290738;
-	marked_point.z =  1.726895448754;
-	marked_point.y = 1.04164309393672224018; //  0.519807190776516433008;
+	marked_point.x = -1.726895448754858426328854724474;  // -1.5290738;
+	marked_point.z = 1.726895448754858426328854724474;
+	marked_point.y = 1.041643093944314148360673792017; //  0.519807190776516433008;
 
 	//marked_point.x =-0.716030343396581;  
 	//marked_point.z = 0.716030343396581;
@@ -146,8 +154,8 @@ int main(int argc, char *argv[]) {
 	
 	plot_orbit(marked_orbit, marked_point, orbit_length);
 
-	ps_close();
-	abort();
+	//ps_close();
+	//abort();
 
 	//int well = diagonal_path(.0001);
 	//int well = diagonal_path_near(marked_orbit[0], .0005);
@@ -300,7 +308,7 @@ int main(int argc, char *argv[]) {
 
 
 	for(int i = 0; i < orbit_length-1; i++){ //orbit_length-1
-		fprintf(stderr, "starting %d\n ", i);
+		//fprintf(stderr, "starting %d\n ", i);
 		m = connect_path(marked_orbit[i], marked_orbit[i+1], 1); //1 meaning iterate f once. 
 		//for(int j = 0; j<m; j++){
 		//fprintf(stderr, "%f\n", transform(ps[j]).x);
@@ -500,8 +508,28 @@ int main(int argc, char *argv[]) {
 	//MAIN MACHINERY: iterates through paths, applies twists, stores result in twist array
 	fprintf(stderr, "to main machinery:\n");
 
+	int twists_length_old = 0;
+
 	for(int i = 0; i < orbit_length-1; i++){ //replace 2 with orbit_length-1
-		size_temp = 0;
+		
+		size_temp = 0; //size_temp will be used to keep track of the number of twists
+
+		fprintf(stderr, "ITERATION NUMBER %d\n", i);
+
+		//applies all previous twists to ith path
+		for(int o = 0; o < orbit_length - 1; o++){
+			if(o >= i){
+				for(int j = twists_length_old; j < twists_length; j++){
+					if(twists[j] >= 0){
+						s(array_pos[o], array_height[o], &path_lengths[o], twists[j]);
+					}
+					if(twists[j] < 0){
+						S(array_pos[o], array_height[o], &path_lengths[o], -twists[j]-1); //S not yet defined
+					}
+				}
+			}
+		}
+		twists_length_old = twists_length;
 
 		// print input data:
 		for(int o = 0; o < orbit_length - 1; o++){
@@ -509,25 +537,27 @@ int main(int argc, char *argv[]) {
 				fprintf(stderr, "(%d, %d)\n", array_pos[o][j], array_height[o][j]);
 			}
 		}
-		//applies all previous twists to ith path
-		fprintf(stderr, "ITERATION NUMBER %d\n", i);
 
-		for(int j = 0; j < twists_length; j++){
-			if(twists[j] >= 0){
-				s(array_pos[i], array_height[i], &path_lengths[i], twists[j]);
-			}
-			if(twists[j] < 0){
-				S(array_pos[i], array_height[i], &path_lengths[i], -twists[j]-1); //S not yet defined
-			}
-		}
-
+		
 		//contracts vertex 0, 1, .., i, stores new data in temporary position/height arrays
 		delete_indices(array_pos[i], array_height[i], &path_lengths[i], arr1_temp, arr2_temp, i, &size_pos_temp);
+
+		//simplifies contracted path data
 		fully_simplify_arrays(arr1_temp, arr2_temp, &size_pos_temp);
 
 		//stores twist data of contracted path in temporary twist array
 		star_algorithm(arr1_temp, arr2_temp, &size_pos_temp, new_twists, &size_temp, i); //orbit_length - 2 > number of contracted strands
-				
+		
+		//print twists in contracted system
+		for(int j = 0; j < size_temp; j++){
+			if(new_twists[j] >= 0){
+				fprintf(stderr, "ts_%d \n", new_twists[j]);
+			}
+			if(new_twists[j] < 0){
+				fprintf(stderr, "tS_%d \n", -new_twists[j]-1);
+			}
+		}
+
 		//translates twist data on contracted path to twist data on full path
 		process_array(new_twists, &size_temp, i);
 
@@ -537,6 +567,7 @@ int main(int argc, char *argv[]) {
 		}
 		twists_length += size_temp;
 
+		//applies new twists to all paths <= i
 		for(int k = 0; k<=i; k++){
 			for(int j = 0; j < size_temp; j++){
 				if(new_twists[j] >= 0){
@@ -548,40 +579,62 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
+		//DEHN TWISTS
+		//size_temp = 0; 
 
-		size_temp = 0;
+		//path_lengths[i] > 2 means a Dehn twist is needed.
 
-		//stores twist data of full path in temporary twist array (just dehn twists around previously contracted path)
-		if(path_lengths[i] > 2){ //i.e. not yet reduced
+		//want to use star algorithm to move ending point of ith path
+		if(path_lengths[i] > 2){ //
 			reverse_array(array_height[i], path_lengths[i]);
 			reverse_array(array_pos[i], path_lengths[i]);
+			//fprintf(stderr, "TWISTING %d!\n", i);
 		}
 
 		size_temp = 0;
-		star_algorithm(array_pos[i], array_height[i], &path_lengths[i], new_twists, &size_temp, i);
-		if(size_temp > 0){
-			fprintf(stderr, "indside!");
-		}
+
+		//for(int j = 0; j <  path_lengths[i]; j++){
+		//	fprintf(stderr, "(%d, %d)\n", array_pos[i][j], array_height[i][j]);
+		//}
+		
+		star_algorithm(array_pos[i], array_height[i], &path_lengths[i], new_twists, &size_temp, i); //this will apply dehn twists
 		
 		
-		//stores new translated twist data in final twist array
 		
+		//Stores new translated twist data in final twist array
 		for(int j = 0; j < size_temp; j++){
 			twists[twists_length + j] = new_twists[j];
 		}
 		twists_length += size_temp;
 
+		
+		//print dehn twists
+		for(int j = 0; j < size_temp; j++){
+			if(new_twists[j] >= 0){
+				fprintf(stderr, "s_%d \n", new_twists[j]);
+			}
+			if(new_twists[j] < 0){
+				fprintf(stderr, "S_%d \n", -new_twists[j]-1);
+			}
+		}
+
+		//Manually adding a twist to make up for the reversal!
 		if(size_temp > 0){
 			if(twists[twists_length-1] < 0){
 				twists[twists_length] = -i-1;
-				S(array_pos[i], array_height[i], &path_lengths[i], -i-1);
+				//S(array_pos[i], array_height[i], &path_lengths[i], -i-1); ETHAN COMMENTED OUT MARCH 31
 			} else{
 				twists[twists_length] = i;
-				s(array_height[i], array_height[i],&path_lengths[i], i);
-			} //manually adding last twist.
+				//s(array_height[i], array_height[i],&path_lengths[i], i);  ETHAN COMMENTED OUT MARCH 31
+			} 
+			//fprintf(stderr, "i is %d\n", i);
 			twists_length++;
+			fprintf(stderr, "s_%d\n", twists[twists_length-1]);
 		}
+
+
 		
+
 		//simplify_final_array(twists, &twists_length);	
 	}
 
@@ -598,15 +651,15 @@ int main(int argc, char *argv[]) {
 		for(int j = 0; j < twists_length; j++){
 			if(twists[j] >= 0){
 				s(array_pos_testing[k], array_height_testing[k], &path_lengths_testing[k], twists[j]);
-				fprintf(stderr, "s_%d \n", twists[j]);
+				//fprintf(stderr, "s_%d \n", twists[j]);
 			}
 			if(twists[j] < 0){
 				S(array_pos_testing[k], array_height_testing[k], &path_lengths_testing[k], -twists[j]-1); //S not yet defined
-				fprintf(stderr, "S_%d \n", -twists[j]-1);
+				//fprintf(stderr, "S_%d \n", -twists[j]-1);
 			}
-			for(int j = 0; j < path_lengths_testing[k]; j++){
-				fprintf(stderr, "(%d, %d)\n", array_pos_testing[k][j], array_height_testing[k][j]); //ethan added
-			}
+		}
+		for(int n = 0; n < path_lengths_testing[k]; n++){
+			fprintf(stderr, "(%d, %d)\n", array_pos_testing[k][n], array_height_testing[k][n]); //ethan added
 		}
 		fprintf(stderr, "end\n");
 		//for(int j = 0; j < path_lengths_testing[k]; j++){
@@ -619,7 +672,7 @@ int main(int argc, char *argv[]) {
 	simplify_final_array(twists, &twists_length);
 	fprintf(stderr, "array is simplified!\n");
 
-	fprintf(stderr, "size is %d\n", twists_length);
+	//fprintf(stderr, "size is %d\n", twists_length);
 
 	//translate final twist array into s_i's. Reverses order! 
 	//this either returns mapping class of f or inverse. both have the same entropy
@@ -929,7 +982,7 @@ void determine_arrays(double *x_vals, double *y_vals, int *pos, int *height, int
 		}
 		//fprintf(stderr, "made it");
 		if(current_pos - pos_array[(*b)-1] == -1){ //moving left
-			fprintf(stderr, "case 2\n");
+			//fprintf(stderr, "case 2\n");
 			pos_array[*b] = current_pos;
 			//fprintf(stderr, " %d\n", current_pos);
 			if(transform(ps[t]).y > y_vals[current_pos]){
@@ -953,7 +1006,7 @@ void determine_arrays(double *x_vals, double *y_vals, int *pos, int *height, int
 		}
 		//fprintf(stderr, "made it");
 		if(current_pos - pos_array[(*b)-1] == 1){ //moving right
-			fprintf(stderr, "case 3\n");
+			//fprintf(stderr, "case 3\n");
 			pos_array[*b] = current_pos;
 			//fprintf(stderr, "%d", current_pos);
 			if(transform(ps[t]).y > y_vals[pos_array[(*b)-1]]){
@@ -1255,9 +1308,13 @@ void s(int *arr1, int *arr2, int *size, int i) { //s_i makes COUNTERCLOCKWISE ro
 	if(arr1[0]==i && arr1[1]==i+1 && *size == 2){
 		arr1[0] = i+1;
 		arr1[1] = i;
+		//fprintf(stderr, "welp");
+		return; //ethan added mar 31
 	} else if(arr1[0]==i+1 && arr1[1]==i && *size == 2){
 		arr1[0] = i;
 		arr1[1] = i+1;
+		//fprintf(stderr, "welp");
+		return; //ethan added mar 31
 	}
 
 	//change end of path before first move becuase changing size doesn't affect first move.
@@ -1402,7 +1459,6 @@ bool simplifying_move(int *arr1, int *arr2, int *size, int *twistsy, int *len) {
 	if(arr1[0] < arr1[1] && arr2[1] == 0){
 		//apply s_{arr1[0]}, append s_{arr1[0]} to twist array
 		twistsy[*len] = arr1[0];
-		//fprintf(stderr, "in deep %d \n", twists[*len]);
 		s(arr1, arr2, size, arr1[0]);
 		(*len)++;
 		simplified = true;
@@ -1412,7 +1468,6 @@ bool simplifying_move(int *arr1, int *arr2, int *size, int *twistsy, int *len) {
 	if(arr1[0] < arr1[1] && arr2[1] == 1){
 		//apply + append S_{arr1[0]}
 		twistsy[*len] = -arr1[0]-1;
-		//fprintf(stderr, "in deep %d \n", twists[*len]);
 		S(arr1, arr2, size, arr1[0]); //STILL MUST DEFINE S
 		(*len)++;
 		simplified = true;
@@ -1421,7 +1476,6 @@ bool simplifying_move(int *arr1, int *arr2, int *size, int *twistsy, int *len) {
 	if(arr1[0] > arr1[1] && arr2[1] == 1){
 		//apply + append s_{arr1[1]}
 		twistsy[*len] = arr1[1];
-		//fprintf(stderr, "in deep %d \n", twists[*len]);
 		s(arr1, arr2, size, arr1[1]);
 		(*len)++;
 		simplified = true;
@@ -1430,7 +1484,6 @@ bool simplifying_move(int *arr1, int *arr2, int *size, int *twistsy, int *len) {
 	if(arr1[0] > arr1[1] && arr2[1] == 0){
 		//apply + append S_{arr1[1]}
 		twistsy[*len] = -arr1[1]-1;
-		//fprintf(stderr, "in deep %d \n", twists[*len]);
 		S(arr1, arr2, size, arr1[1]);
 		(*len)++;
 		simplified = true;
@@ -1440,18 +1493,20 @@ bool simplifying_move(int *arr1, int *arr2, int *size, int *twistsy, int *len) {
 	return simplified;
 }
 
-void star_algorithm(int *arr1, int *arr2, int *size, int *twistsy, int *len, int k){//simplified until path starts at k and moves one step in postive direction.
+
+//simplifies until path starts at k and moves one step in postive direction.
+void star_algorithm(int *arr1, int *arr2, int *size, int *twistsy, int *len, int k){
 	// set length of twists to zero
 	//fprintf(stderr, "inside star!");
 	//*len = 0;
 	//int indicator = -5000; //1 = positive twist, 0 = negative twist
 	//int ind = -5000; // keeps track of location
 	for (int j = 0; j < *size; j++){
-			fprintf(stderr, "(%d, %d) \n", arr1[j], arr2[j]);
+			//fprintf(stderr, "(%d, %d) \n", arr1[j], arr2[j]);
 	}
 	bool simplified;
     do {
-		fprintf(stderr, "size is %d\n", *size);
+		//fprintf(stderr, "size is %d\n", *size);
         simplified = simplifying_move(arr1, arr2, size, twistsy, len);
 			//print example path 
 		//for (int j = 0; j < *size; j++){
@@ -1465,6 +1520,8 @@ void star_algorithm(int *arr1, int *arr2, int *size, int *twistsy, int *len, int
 		//for(int i = 0; i < *size ;i++){
 		//	fprintf(stderr, "(%d, %d)\n", arr1[i], arr2[i]);
 		//}
+
+		//Moving starting point to the left of k or at k
 		if(arr1[0]>k){
 			twistsy[*len] = arr1[0]-1;
 			s(arr1, arr2, size, arr1[0]-1);
@@ -1473,6 +1530,7 @@ void star_algorithm(int *arr1, int *arr2, int *size, int *twistsy, int *len, int
 			
 			continue;
 		}
+		//Put ending point at k+1. Starting point might move, but only left.
 		if(arr1[*size-1]< k+1){
 			twistsy[*len] = arr1[*size] - 1;
 			s(arr1, arr2, size, arr1[*size-1]);
@@ -1487,6 +1545,8 @@ void star_algorithm(int *arr1, int *arr2, int *size, int *twistsy, int *len, int
 			//fprintf(stderr, "(%d, %d) \n", arr1[0], arr1[*size-1]);
 			continue;
 		}
+
+		//move starting point to k if it's not already there
 		if(arr1[0]< k){
 			twistsy[*len] = arr1[0];
 			s(arr1, arr2, size, arr1[0]);
