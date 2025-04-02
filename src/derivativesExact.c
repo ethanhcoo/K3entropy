@@ -23,20 +23,31 @@ void init_point(mpfr_point *p) {
     mpfr_init(p->z);
 }
 
+//Charts \tilde \phi_i 
+//3 = \Phi_1^+
+//2 = \Phi_2^+
+//1 = \Phi_3^+
+//4 = \Phi_1^-
+//5 = \Phi_2^-
+//6 = \Phi_3^-
+
+const int charts[10] = {6, 4, 5, 6, 5, 5, 5, 1, 5, 3};
+
+
 //function declarations
-void involute_exact(mpfr_t x, mpfr_t y, mpfr_t z);
-void ix_exact(mpfr_point *p);
-void iy_exact(mpfr_point *p);
-void iz_exact(mpfr_point *p);
-void f_exact(mpfr_point *p);
-void lift_exact(mpfr_point *p,  mpfr_t x,  mpfr_t y);
-void lift_exact_under(mpfr_point *p,  mpfr_t x,  mpfr_t y);
-void lift_exact_charts(mpfr_point *p,  mpfr_t x,  mpfr_t y, int i); //lifts with the ith chart
-bool unreal_exact( mpfr_t x,  mpfr_t y);
-void lift_exact_y(mpfr_point *p,  mpfr_t x,  mpfr_t z);
-void f_c(mpfr_t a,  mpfr_t b,  int i, int j); //i = incoming chart, j = outgoing chart
-void projection_chart(mpfr_point p, mpfr_t a, mpfr_t b, int i);
-void dist_2plane(mpfr_t result, mpfr_t a1, mpfr_t b1, mpfr_t a2, mpfr_t b2);
+
+void alphaExact(mpfr_t result, mpfr_t x, mpfr_t y); // [alpha]
+void betaExact(mpfr_t result, mpfr_t x, mpfr_t y); // [beta]
+void DExact(mpfr_t result, mpfr_t x, mpfr_t y); // [D]
+void ix_exact(mpfr_point *p); // [I_x]
+void iy_exact(mpfr_point *p); // [I_y]
+void iz_exact(mpfr_point *p); // [I_z]
+void f_exact(mpfr_point *p); // [f]
+void pPlusExact(mpfr_t result,  mpfr_t x,  mpfr_t y); // [p_+]
+void PMinusExact(mpfr_t result,  mpfr_t x,  mpfr_t y); // [p_-]
+void lift_exact_charts(mpfr_point *p,  mpfr_t x,  mpfr_t y, int i); // [Phi_k^{pm}] 
+void f_c(mpfr_t a,  mpfr_t b,  int i, int j); // [f_c] where i = incoming chart, j = outgoing chart
+void dist_2plane(mpfr_t result, mpfr_t a1, mpfr_t b1, mpfr_t a2, mpfr_t b2); // distance between (a1,b1) and (a2,b2)
 
 void multiplyMatricesExact(mpfr_t **firstMatrix, mpfr_t **secondMatrix, mpfr_t **result, int ROWS1, int COLS1, int ROWS2, int COLS2);
 void multiplyMatricesAuxExact(mpfr_t **firstMatrix, mpfr_t **secondMatrix, mpfr_t **result, int ROWS1, int COLS1, int ROWS2, int COLS2);
@@ -44,7 +55,6 @@ void printMatrixExact(mpfr_t **matrix, int ROWS1, int COLS1);
 void DixExact(mpfr_point p, mpfr_t **matrix);
 void DiyExact(mpfr_point p, mpfr_t **matrix);
 void DizExact(mpfr_point p, mpfr_t **matrix);
-void DExact(mpfr_t result, mpfr_t x, mpfr_t y);
 void DxExact(mpfr_t result, mpfr_t x, mpfr_t y);
 void DyExact(mpfr_t result, mpfr_t x, mpfr_t y);
 void DxxExact(mpfr_t result, mpfr_t x, mpfr_t y);
@@ -63,12 +73,14 @@ void alpha_yExact(mpfr_t result, const mpfr_t x, const mpfr_t y);
 mpfr_t ae, be;
 
 int main(int argc, char *argv[]) {
-
+    //Setting default rounding mode
     mpfr_set_default_rounding_mode(MPFR_RNDZ);
 
-    mpfr_set_default_prec(5000); // Set precision to 500 bits
-    mpfr_set_emin (-1073); mpfr_set_emax (1024); //Sets the exponent range to [-1073,1024]
+    // Set precision to 5000 bits and exponent range to [-1073,1024]
+    mpfr_set_default_prec(5000); 
+    mpfr_set_emin (-1073); mpfr_set_emax (1024); 
 
+    //Initializing Matrices
     mpfr_t** matrix = (mpfr_t**)malloc(3 * sizeof(mpfr_t*));
     mpfr_t** coordmatrix = (mpfr_t**)malloc(3 * sizeof(mpfr_t*));
     mpfr_t** matrix_temp = (mpfr_t**)malloc(3 * sizeof(mpfr_t*));
@@ -135,30 +147,14 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    
 
-    mpfr_t result, epsilon, delta, temp;
-    mpfr_inits(ae, be, result, epsilon, delta, temp, NULL);
-	
-   
-    mpfr_t a_start, b_start;
-    mpfr_t a_temp, b_temp;
-    mpfr_inits(a_start,b_start,NULL);
-    mpfr_inits(a_temp,b_temp,NULL);
-
-
-    //mpfr_t a1, b1, a2, b2, a3, b3, a4, b4, a5, b5, a6, b6, a7, b7, a8, b8, a9, b9, a10, b10;
-   // mpfr_inits(a1, b1, a2, b2, a3, b3, a4, b4, a5, b5, a6, b6, a7, b7, a8, b8, a9, b9, a10, b10, NULL);
-
-
-    mpfr_set_str(delta, "1e-20", 10, MPFR_RNDZ); //recurrence requirement //1e-7
-
-    mpfr_set_str(ae, "10", 10, MPFR_RNDZ);
-	mpfr_set_str(be, "2", 10, MPFR_RNDZ);
-
+    //Initialize pseudo-orbit
     mpfr_t a[10];
+    mpfr_t b[10];
+
     for (int i = 0; i < 10; ++i) {
         mpfr_init(a[i]);
+        mpfr_init(b[i]);
     }
 
     mpfr_set_str(a[0], "1.041643093944314148360673792017", 10, MPFR_RNDZ);
@@ -172,10 +168,7 @@ int main(int argc, char *argv[]) {
     mpfr_set_str(a[8], "0.926435350008842162121508383319", 10, MPFR_RNDZ);
     mpfr_set_str(a[9], "0.555943953085459715621476373770", 10, MPFR_RNDZ);
 
-    mpfr_t b[10];
-    for (int i = 0; i < 10; ++i) {
-        mpfr_init(b[i]);
-    }
+    
 
     mpfr_set_str(b[0], "1.726895448754858426328854724474", 10, MPFR_RNDZ);
     mpfr_set_str(b[1], "0.555943953085459715621476373770", 10, MPFR_RNDZ);
@@ -189,69 +182,61 @@ int main(int argc, char *argv[]) {
     mpfr_set_str(b[9], "0.439586738044637984442175311821", 10, MPFR_RNDZ);
 
 
-    int charts[10] = {6, 4, 5, 6, 5, 5, 5, 1, 5, 3};
 
-
-    mpfr_set(a_start, a[0], MPFR_RNDZ);
-    mpfr_set(b_start, b[0], MPFR_RNDZ);
+    //Initialize variables
+    mpfr_t out;
+    mpfr_init(out);
+    char a_str[64], b_str[64];
 
     for (int i = 0; i < 10; i++) {
-        mpfr_set (a_temp, a[i], MPFR_RNDZ);
-        mpfr_set (b_temp, b[i], MPFR_RNDZ);
-        f_c(a_temp, b_temp, charts[i], charts[(i + 1) % 10]);
-        dist_2plane(temp, a_temp, b_temp, a[(i + 1) % 10], b[(i + 1) % 10]);
-        if (mpfr_cmp(temp, delta) < 0) {
-            fprintf(stderr, "success \n");
-        } else {
-            fprintf(stderr, "fail \n");
-        }
-    
-        char a_str[64], b_str[64];
         mpfr_sprintf(a_str, "%.15Rf", a[i]);
         mpfr_sprintf(b_str, "%.15Rf", b[i]);
-    
         fprintf(stderr, "(x,y) is (%s, %s) \n", a_str, b_str);
+
+        //Print current chart
+        fprintf(stderr, "chart is %d \n", charts[i]);
     
-        mpfr_t result;
-        mpfr_init(result);
-    
-        DExact(result, a[i], b[i]);
-        mpfr_sprintf(a_str, "%.15Rf", result);
+        //Print values for D and its derivatives
+        DExact(out, a[i], b[i]);
+        mpfr_sprintf(a_str, "%.15Rf", out);
         fprintf(stderr, "DExact(x,y) is %s \n", a_str);
     
-        DxExact(result, a[i], b[i]);
-        mpfr_sprintf(a_str, "%.15Rf", result);
+        DxExact(out, a[i], b[i]);
+        mpfr_sprintf(a_str, "%.15Rf", out);
         fprintf(stderr, "DxExact(x,y) is %s \n", a_str);
     
-        DyExact(result, a[i], b[i]);
-        mpfr_sprintf(a_str, "%.15Rf", result);
+        DyExact(out, a[i], b[i]);
+        mpfr_sprintf(a_str, "%.15Rf", out);
         fprintf(stderr, "DyExact(x,y) is %s \n", a_str);
     
-        DxxExact(result, a[i], b[i]);
-        mpfr_sprintf(a_str, "%.15Rf", result);
+        DxxExact(out, a[i], b[i]);
+        mpfr_sprintf(a_str, "%.15Rf", out);
         fprintf(stderr, "DxxExact(x,y) is %s \n", a_str);
     
-        DyyExact(result, a[i], b[i]);
-        mpfr_sprintf(a_str, "%.15Rf", result);
+        DyyExact(out, a[i], b[i]);
+        mpfr_sprintf(a_str, "%.15Rf", out);
         fprintf(stderr, "DyyExact(x,y) is %s \n", a_str);
     
-        DxyExact(result, a[i], b[i]);
-        mpfr_sprintf(a_str, "%.15Rf", result);
+        DxyExact(out, a[i], b[i]);
+        mpfr_sprintf(a_str, "%.15Rf", out);
         fprintf(stderr, "DxyExact(x,y) is %s \n", a_str);
-    
-        mpfr_clear(result);
-    
-        int k = 0;
         
+        //Calculating D(phi_i)
+        int k = 0;
         for (int j = 0; j < 3; j++) {
             if (j == 3 - charts[i]) {
                 pxExact(temp4[j][0], a[i], b[i]);
                 pyExact(temp4[j][1], a[i], b[i]);
             } else if (j == 6 - charts[i]) {
+                //because p_+(-x,y) = -p_-(x,y):
                 mpfr_neg(temp4[j][0], a[i], MPFR_RNDZ);
                 pxExact(temp4[j][0], temp4[j][0], b[i]);
-                mpfr_neg(temp4[j][1], b[i], MPFR_RNDZ);
+
+                //because p_+(-x,y) = -p_-(x,y):
+                mpfr_neg(temp4[j][1], a[i], MPFR_RNDZ);
                 pyExact(temp4[j][1], temp4[j][1], b[i]);
+                mpfr_neg(temp4[j][1], temp4[j][1], MPFR_RNDZ);
+
             } else {
                 if (k == 0) {
                     mpfr_set_ui(temp4[j][0], 1, MPFR_RNDZ);
@@ -268,9 +253,9 @@ int main(int argc, char *argv[]) {
                 k++;
             }
         }
+
+        //Calculating D(phi_{i+1}^{-1})
         k = 0;
-    
-        
         for (int j = 0; j < 3; j++) {
             if (j == 3 - charts[(i+1)%10]) {
                 mpfr_set_ui(temp5[0][j], 0, MPFR_RNDZ);
@@ -294,46 +279,36 @@ int main(int argc, char *argv[]) {
                 k++;
             }
         }
-    
-        fprintf(stderr, "chart is %d \n", charts[i]);
         
+        
+        //Lift to X(\R)
         mpfr_point p;
 	    init_point(&p);
 	    lift_exact_charts(&p, a[i], b[i], charts[i]);
-        mpfr_sprintf(a_str, "%.15Rf", p.y);
-        mpfr_sprintf(b_str, "%.15Rf", p.z);
-    
-        fprintf(stderr, "(x,y) is (%s, %s) \n", a_str, b_str);
 
+        //Apply Ix, Iy, Iz and calculate  D(Ix), D(Iy), D(Iz)
         DixExact(p, x_mat);
-        ix_exact(&p);
+        ix_exact(&p); 
         DiyExact(p, y_mat);
-
         iy_exact(&p);
         DizExact(p, z_mat);
-
         iz_exact(&p);
     
+        //Compute temp3 = Df
         multiplyMatricesExact(y_mat, x_mat, temp2, 3, 3, 3, 3);
         multiplyMatricesExact(z_mat, temp2, temp3, 3, 3, 3, 3);
-        printMatrixExact(temp3, 3, 3);
 
-
-    
-        printMatrixExact(temp4, 3, 2);
-
+        //Compute and print Df^c
         multiplyMatricesAuxExact(temp5, temp3, temp1, 2, 3, 3, 3);
         multiplyMatricesAuxExact(temp3, temp4, temp1, 2, 3, 3, 2);
         fprintf(stderr, "(Df^c}_{x_%d^c} =  \n", i);
         printMatrixExact(temp4, 2, 2);
-        multiplyMatricesAuxExact(temp4, coordmatrix, temp1, 2, 2, 2, 2);
     }
 	exit(0);
 
 }
 
-
-void involute_exact(mpfr_t x, mpfr_t y, mpfr_t z) {
+void alphaExact(mpfr_t result, mpfr_t x, mpfr_t y) {
     mpfr_t temp1, temp2, temp3;
 
     mpfr_inits(temp1, temp2, temp3, NULL);
@@ -352,241 +327,194 @@ void involute_exact(mpfr_t x, mpfr_t y, mpfr_t z) {
     // temp2 = temp2 * temp3
     mpfr_mul(temp2, temp2, temp3, MPFR_RNDZ);
 
-    // temp1 = -ae * temp1 / temp2
-    mpfr_mul(temp1, temp1, ae, MPFR_RNDZ);
-    mpfr_neg(temp1, temp1, MPFR_RNDZ);
-    mpfr_div(temp1, temp1, temp2, MPFR_RNDZ);
-
-    // result = temp1 - z
-    mpfr_sub(z, temp1, z, MPFR_RNDZ);
+    // result = temp1 / temp2
+    mpfr_div(result, temp1, temp2, MPFR_RNDZ);
 
     mpfr_clears(temp1, temp2, temp3, NULL);
 }
 
-void ix_exact(mpfr_point *p)
-{
-	involute_exact(p->z,p->y,p->x);
-}
-void iy_exact(mpfr_point *p)
-{
-	involute_exact(p->z,p->x,p->y);
-}
-void iz_exact(mpfr_point *p)
-{
-	involute_exact(p->x,p->y,p->z);
-}
-void f_exact(mpfr_point *p)
-{
-	ix_exact(p);
-	iy_exact(p);
-	iz_exact(p);
-}
+void betaExact(mpfr_t result, mpfr_t x, mpfr_t y) {
+    mpfr_t temp2, temp3;
 
-void f_c(mpfr_t s,  mpfr_t t, int i, int j) {
-	mpfr_point temp;
-	init_point(&temp);
-	lift_exact_charts(&temp, s, t, i);
-	//gmp_fprintf(stderr, "(%.5Ff, %.5Ff, %.5Ff)\n", temp.x, temp.y, temp.z);
-	f_exact(&temp);
-	//gmp_fprintf(stderr, "after (%.5Ff, %.5Ff, %.5Ff)\n", temp.x, temp.y, temp.z);
+    mpfr_inits(temp2, temp3, NULL);
 
-	if(j == 1 || j== 4){
-		mpfr_set(s, temp.x,MPFR_RNDZ);
-		mpfr_set(t, temp.y,MPFR_RNDZ);
-	}
-	if(j == 2 || j== 5){
-		mpfr_set(s, temp.x,MPFR_RNDZ);
-		mpfr_set(t, temp.z,MPFR_RNDZ);
-	}
-	if(j == 3 || j== 6){
-		mpfr_set(s, temp.y,MPFR_RNDZ);
-		mpfr_set(t, temp.z,MPFR_RNDZ);
-	}
-	//gmp_fprintf(stderr, "inside (%.5Ff, %.5Ff)\n", s,t);
-	mpfr_clears(temp.x, temp.y, temp.z, NULL); //this right?
-}
-
-
-
-void dist_2plane(mpfr_t result, mpfr_t a1, mpfr_t b1, mpfr_t a2, mpfr_t b2) {
-    mpfr_t dx, dy, sum;
-
-    mpfr_inits(dx, dy, sum, NULL);
-
-    mpfr_sub(dx, a1, a2, MPFR_RNDZ);
-    mpfr_sub(dy, b1, b2, MPFR_RNDZ);
-
-    mpfr_mul(dx, dx, dx, MPFR_RNDZ);
-    mpfr_mul(dy, dy, dy, MPFR_RNDZ);
-
-    mpfr_add(sum, dx, dy, MPFR_RNDZ);
-
-    mpfr_sqrt(result, sum, MPFR_RNDZ);
-
-    mpfr_clears(dx, dy, sum, NULL);
-}
-
-
-
-bool unreal_exact( mpfr_t x,  mpfr_t y) {
-	mpfr_t qa, qb, qc, temp1, temp2, sqrt_term;
-
-    mpfr_inits(qa, qb, qc, temp1, temp2, sqrt_term, NULL);
-
-    // qa = (1 + x*x) * (1 + y*y)
-    mpfr_mul(temp1, x, x, MPFR_RNDZ);
-    mpfr_add_ui(temp1, temp1, 1, MPFR_RNDZ);
-    mpfr_mul(temp2, y, y, MPFR_RNDZ);
+    // temp2 = 1 + x * x
+    mpfr_mul(temp2, x, x, MPFR_RNDZ);
     mpfr_add_ui(temp2, temp2, 1, MPFR_RNDZ);
-    mpfr_mul(qa, temp1, temp2, MPFR_RNDZ);
 
-    // qb = a * x * y
-    mpfr_mul(qb, ae, x, MPFR_RNDZ);
-    mpfr_mul(qb, qb, y, MPFR_RNDZ);
+    // temp3 = 1 + y * y
+    mpfr_mul(temp3, y, y, MPFR_RNDZ);
+    mpfr_add_ui(temp3, temp3, 1, MPFR_RNDZ);
 
-    // qc = qa - b
-    mpfr_sub(qc, qa, be, MPFR_RNDZ);
+    // temp2 = temp2 * temp3
+    mpfr_mul(temp2, temp2, temp3, MPFR_RNDZ);
 
-
-    // p.z = (-qb + sqrt(qb*qb - 4*qa*qc)) / (2*qa)
-    mpfr_mul(temp1, qb, qb, MPFR_RNDZ); // temp1 = qb * qb
-    mpfr_mul_ui(temp2, qa, 4, MPFR_RNDZ); // temp2 = 4 * qa
-    mpfr_mul(temp2, temp2, qc, MPFR_RNDZ); // temp2 = 4 * qa * qc
-    mpfr_sub(sqrt_term, temp1, temp2, MPFR_RNDZ); // sqrt_term = qb*qb - 4*qa*qc
-	if(mpfr_cmp_ui(sqrt_term, 0) < 0){
-		return true;
-	} else {
-		return false;
-	}
+    // result = 1 / temp2
+    mpfr_ui_div(result, 1, temp2, MPFR_RNDZ);
 }
 
-void lift_exact(mpfr_point *p,  mpfr_t x,  mpfr_t y) { //MAKE SURE TO THROW ERROR IF NOT REAL!
 
-    mpfr_t qa, qb, qc, temp1, temp2, sqrt_term;
+void ix_exact(mpfr_point *p) {
+    mpfr_point q;
+    init_point(&q);
 
-    mpfr_inits(qa, qb, qc, temp1, temp2, sqrt_term, NULL);
-
-    // qa = (1 + x*x) * (1 + y*y)
-    mpfr_mul(temp1, x, x, MPFR_RNDZ);
-    mpfr_add_ui(temp1, temp1, 1, MPFR_RNDZ);
-    mpfr_mul(temp2, y, y, MPFR_RNDZ);
-    mpfr_add_ui(temp2, temp2, 1, MPFR_RNDZ);
-    mpfr_mul(qa, temp1, temp2, MPFR_RNDZ);
-
-    // qb = a * x * y
-    mpfr_mul(qb, ae, x, MPFR_RNDZ);
-    mpfr_mul(qb, qb, y, MPFR_RNDZ);
-
-    // qc = qa - b
-    mpfr_sub(qc, qa, be, MPFR_RNDZ);
-
-
-    // p.x = x
-    mpfr_set(p->x, x, MPFR_RNDZ);
-
-    // p.y = y
-    mpfr_set(p->y, y, MPFR_RNDZ);
-
-    // p.z = (-qb + sqrt(qb*qb - 4*qa*qc)) / (2*qa)
-    mpfr_mul(temp1, qb, qb, MPFR_RNDZ); // temp1 = qb * qb
-    mpfr_mul_ui(temp2, qa, 4, MPFR_RNDZ); // temp2 = 4 * qa
-
-    mpfr_mul(temp2, temp2, qc, MPFR_RNDZ); // temp2 = 4 * qa * qc
-    mpfr_sub(sqrt_term, temp1, temp2, MPFR_RNDZ); // sqrt_term = qb*qb - 4*qa*qc
-
-    mpfr_sqrt(sqrt_term, sqrt_term, MPFR_RNDZ); // sqrt_term = sqrt(qb*qb - 4*qa*qc)
-
-    mpfr_neg(qb, qb, MPFR_RNDZ); // qb = -qb
-    mpfr_add(temp1, qb, sqrt_term, MPFR_RNDZ); // temp1 = -qb + sqrt(qb*qb - 4*qa*qc)
-    mpfr_mul_ui(temp2, qa, 2, MPFR_RNDZ); // temp2 = 2 * qa
-    mpfr_div(p->z, temp1, temp2, MPFR_RNDZ); // p.z = temp1 / temp2
-
-
-    mpfr_clears(qa, qb, qc, temp1, temp2, sqrt_term, NULL);
+    mpfr_set(q.x, p->y, MPFR_RNDZ);
+    mpfr_set(q.y, p->z, MPFR_RNDZ);
+    mpfr_set(q.z, p->x, MPFR_RNDZ);
+    
+    iz_exact(&q);
+    mpfr_set(p->x, q.z, MPFR_RNDZ);
 }
 
-void lift_exact_under(mpfr_point *p,  mpfr_t x,  mpfr_t y) { //MAKE SURE TO THROW ERROR IF NOT REAL!
+void iy_exact(mpfr_point *p) {
+    mpfr_point q;
+    init_point(&q);
 
-    mpfr_t qa, qb, qc, temp1, temp2, sqrt_term;
+    mpfr_set(q.x, p->x, MPFR_RNDZ);
+    mpfr_set(q.y, p->z, MPFR_RNDZ);
+    mpfr_set(q.z, p->y, MPFR_RNDZ);
 
-    mpfr_inits(qa, qb, qc, temp1, temp2, sqrt_term, NULL);
+	iz_exact(&q);
+    mpfr_set(p->y, q.z, MPFR_RNDZ);
+}
 
-    // qa = (1 + x*x) * (1 + y*y)
+void iz_exact(mpfr_point *p) {
+	mpfr_t temp1;
+    mpfr_inits(temp1, NULL);
+
+    // temp1 = -10 * alpha(x,y)
+    alphaExact(temp1, p->x, p->y);
+    mpfr_mul_ui(temp1, temp1, 10, MPFR_RNDZ);
+    mpfr_neg(temp1, temp1, MPFR_RNDZ);
+
+    // result = temp1 - z
+    mpfr_sub(p->z, temp1, p->z, MPFR_RNDZ);
+    mpfr_clears(temp1, NULL);
+}
+
+void DExact(mpfr_t result, mpfr_t x, mpfr_t y) {
+    mpfr_t temp1, temp2, temp3, temp4;
+    mpfr_inits(temp1, temp2, temp3, temp4, NULL);
+
+    // temp1 = 100 * x * x * y * y
     mpfr_mul(temp1, x, x, MPFR_RNDZ);
-    mpfr_add_ui(temp1, temp1, 1, MPFR_RNDZ);
-    mpfr_mul(temp2, y, y, MPFR_RNDZ);
+    mpfr_mul(temp1, temp1, y, MPFR_RNDZ);
+    mpfr_mul(temp1, temp1, y, MPFR_RNDZ);
+    mpfr_mul_ui(temp1, temp1, 100, MPFR_RNDZ);
+
+    // temp2 = 8 * (1 + x * x) * (1 + y * y)
+    mpfr_mul(temp2, x, x, MPFR_RNDZ);
     mpfr_add_ui(temp2, temp2, 1, MPFR_RNDZ);
-    mpfr_mul(qa, temp1, temp2, MPFR_RNDZ);
+    mpfr_mul(temp3, y, y, MPFR_RNDZ);
+    mpfr_add_ui(temp3, temp3, 1, MPFR_RNDZ);
+    mpfr_mul(temp2, temp2, temp3, MPFR_RNDZ);
+    mpfr_mul_ui(temp2, temp2, 8, MPFR_RNDZ);
 
-    // qb = a * x * y
-    mpfr_mul(qb, ae, x, MPFR_RNDZ);
-    mpfr_mul(qb, qb, y, MPFR_RNDZ);
+    // temp3 = 4 * (1 + x * x) * (1 + x * x) * (1 + y * y) * (1 + y * y)
+    mpfr_mul(temp3, x, x, MPFR_RNDZ);
+    mpfr_add_ui(temp3, temp3, 1, MPFR_RNDZ);
+    mpfr_mul(temp3, temp3, temp3, MPFR_RNDZ);
+    mpfr_mul(temp4, y, y, MPFR_RNDZ);
+    mpfr_add_ui(temp4, temp4, 1, MPFR_RNDZ);
+    mpfr_mul(temp4, temp4, temp4, MPFR_RNDZ);
+    mpfr_mul(temp3, temp3, temp4, MPFR_RNDZ);
+    mpfr_mul_ui(temp3, temp3, 4, MPFR_RNDZ);
 
-    // qc = qa - b
-    mpfr_sub(qc, qa, be, MPFR_RNDZ);
+    // result = temp1 + temp2 - temp3
+    mpfr_add(result, temp1, temp2, MPFR_RNDZ);
+    mpfr_sub(result, result, temp3, MPFR_RNDZ);
+
+    mpfr_clears(temp1, temp2, temp3, temp4, NULL);
+}
 
 
-    // p.x = x
-    mpfr_set(p->x, x, MPFR_RNDZ);
+void pPlusExact(mpfr_t result,  mpfr_t x,  mpfr_t y) {
+    mpfr_t temp1, temp2, temp3;
 
-    // p.y = y
-    mpfr_set(p->y, y, MPFR_RNDZ);
+    mpfr_inits(temp1, temp2, temp3, NULL);
 
-    // p.z = (-qb + sqrt(qb*qb - 4*qa*qc)) / (2*qa)
-    mpfr_mul(temp1, qb, qb, MPFR_RNDZ); // temp1 = qb * qb
-    mpfr_mul_ui(temp2, qa, 4, MPFR_RNDZ); // temp2 = 4 * qa
+    //temp1 = -5 alpha
+    alphaExact(temp1, x, y);
+    mpfr_mul_si(temp1, temp1, -5, MPFR_RNDZ);
 
-    mpfr_mul(temp2, temp2, qc, MPFR_RNDZ); // temp2 = 4 * qa * qc
-    mpfr_sub(sqrt_term, temp1, temp2, MPFR_RNDZ); // sqrt_term = qb*qb - 4*qa*qc
+    //temp2 = (1/2)beta \sqrt{D}
+    betaExact(temp2, x, y);
+    DExact(temp3, x, y);
+    mpfr_sqrt(temp3, temp3, MPFR_RNDZ);
+    mpfr_mul(temp2, temp2, temp3, MPFR_RNDZ);
+    mpfr_div_ui(temp2, temp2, 2, MPFR_RNDZ);
 
-    mpfr_sqrt(sqrt_term, sqrt_term, MPFR_RNDZ); // sqrt_term = sqrt(qb*qb - 4*qa*qc)
+    //p_+ = -5 alpha + (1/2)beta \sqrt{D}
+    mpfr_add(result, temp1, temp2, MPFR_RNDZ);
 
-    mpfr_neg(qb, qb, MPFR_RNDZ); // qb = -qb
-    mpfr_sub(temp1, qb, sqrt_term, MPFR_RNDZ); // temp1 = -qb - sqrt(qb*qb - 4*qa*qc)
-    mpfr_mul_ui(temp2, qa, 2, MPFR_RNDZ); // temp2 = 2 * qa
-    mpfr_div(p->z, temp1, temp2, MPFR_RNDZ); // p.z = temp1 / temp2
-    mpfr_clears(qa, qb, qc, temp1, temp2, sqrt_term, NULL);
+    mpfr_clears(temp1, temp2, temp3, NULL);
+}
+void pMinusExact(mpfr_t result,  mpfr_t x,  mpfr_t y) {
+    mpfr_t temp1, temp2, temp3;
+
+    mpfr_inits(temp1, temp2, temp3, NULL);
+
+    //temp1 = -5 alpha
+    alphaExact(temp1, x, y);
+    mpfr_mul_si(temp1, temp1,-5, MPFR_RNDZ);
+
+    //temp2 = (1/2)beta \sqrt{D}
+    betaExact(temp2, x, y);
+    DExact(temp3, x, y);
+    mpfr_sqrt(temp3, temp3, MPFR_RNDZ);
+    mpfr_mul(temp2, temp2, temp3, MPFR_RNDZ);
+    mpfr_div_ui(temp2, temp2, 2, MPFR_RNDZ);
+
+    //p_- = -5 alpha - (1/2)beta \sqrt{D}
+    mpfr_sub(result, temp1, temp2, MPFR_RNDZ);
+
+    mpfr_clears(temp1, temp2, temp3, NULL);
 }
 
 
 void lift_exact_charts(mpfr_point *p,  mpfr_t a,  mpfr_t b, int i) {
 	mpfr_t temp0;
 	mpfr_init(temp0);
-
 	if(i == 1){
-		lift_exact(p, a, b);
+        pPlusExact(temp0,a,b);
+		mpfr_set(p->x, a, MPFR_RNDZ);
+		mpfr_set(p->y, b, MPFR_RNDZ);
+        mpfr_set(p->z, temp0, MPFR_RNDZ);
 	}
 	if(i == 2){
-		lift_exact(p, a, b);
-		mpfr_set(temp0, p->y, MPFR_RNDZ);
-		mpfr_set(p->y, p->z, MPFR_RNDZ);
-		mpfr_set(p->z, temp0, MPFR_RNDZ);
+		pPlusExact(temp0,a,b);
+		mpfr_set(p->x, a, MPFR_RNDZ);
+		mpfr_set(p->y, temp0, MPFR_RNDZ);
+        mpfr_set(p->z, b, MPFR_RNDZ);
 	}
 	if(i == 3){
-		lift_exact(p, a, b);
-		mpfr_set(temp0, p->z, MPFR_RNDZ);
-		mpfr_set(p->z, p->y, MPFR_RNDZ);
-		mpfr_set(p->y, p->x, MPFR_RNDZ);
+		pPlusExact(temp0,a,b);
 		mpfr_set(p->x, temp0, MPFR_RNDZ);
+		mpfr_set(p->y, a, MPFR_RNDZ);
+        mpfr_set(p->z, b, MPFR_RNDZ);
 	}
 	if(i == 4){
-		lift_exact_under(p, a, b);
+        pMinusExact(temp0,a,b);
+		mpfr_set(p->x, a, MPFR_RNDZ);
+		mpfr_set(p->y, b, MPFR_RNDZ);
+        mpfr_set(p->z, temp0, MPFR_RNDZ);
 	}
 	if(i == 5){
-		lift_exact_under(p, a, b);
-		mpfr_set(temp0, p->y, MPFR_RNDZ);
-		mpfr_set(p->y, p->z, MPFR_RNDZ);
-		mpfr_set(p->z, temp0, MPFR_RNDZ);
+		pMinusExact(temp0,a,b);
+		mpfr_set(p->x, a, MPFR_RNDZ);
+		mpfr_set(p->y, temp0, MPFR_RNDZ);
+        mpfr_set(p->z, b, MPFR_RNDZ);
 	}
 	if(i == 6){
-		lift_exact_under(p, a, b);
-		mpfr_set(temp0, p->z, MPFR_RNDZ);
-		mpfr_set(p->z, p->y, MPFR_RNDZ);
-		mpfr_set(p->y, p->x, MPFR_RNDZ);
+		pMinusExact(temp0,a,b);
 		mpfr_set(p->x, temp0, MPFR_RNDZ);
+		mpfr_set(p->y, a, MPFR_RNDZ);
+        mpfr_set(p->z, b, MPFR_RNDZ);
 	}
 	mpfr_clears(temp0, NULL);
 }
+
+
 
 void multiplyMatricesExact(mpfr_t **firstMatrix, mpfr_t **secondMatrix, mpfr_t **result, int ROWS1, int COLS1, int ROWS2, int COLS2) {
     for (int i = 0; i < ROWS1; ++i) {
@@ -767,40 +695,6 @@ void DizExact(mpfr_point p, mpfr_t **matrix) {
     mpfr_clears(temp1, temp2, temp3, NULL);
 }
 
-void DExact(mpfr_t result, mpfr_t x, mpfr_t y) {
-    mpfr_t temp1, temp2, temp3, temp4;
-    mpfr_inits(temp1, temp2, temp3, temp4, NULL);
-
-    // temp1 = 100 * x * x * y * y
-    mpfr_mul(temp1, x, x, MPFR_RNDZ);
-    mpfr_mul(temp1, temp1, y, MPFR_RNDZ);
-    mpfr_mul(temp1, temp1, y, MPFR_RNDZ);
-    mpfr_mul_ui(temp1, temp1, 100, MPFR_RNDZ);
-
-    // temp2 = 8 * (1 + x * x) * (1 + y * y)
-    mpfr_mul(temp2, x, x, MPFR_RNDZ);
-    mpfr_add_ui(temp2, temp2, 1, MPFR_RNDZ);
-    mpfr_mul(temp3, y, y, MPFR_RNDZ);
-    mpfr_add_ui(temp3, temp3, 1, MPFR_RNDZ);
-    mpfr_mul(temp2, temp2, temp3, MPFR_RNDZ);
-    mpfr_mul_ui(temp2, temp2, 8, MPFR_RNDZ);
-
-    // temp3 = 4 * (1 + x * x) * (1 + x * x) * (1 + y * y) * (1 + y * y)
-    mpfr_mul(temp3, x, x, MPFR_RNDZ);
-    mpfr_add_ui(temp3, temp3, 1, MPFR_RNDZ);
-    mpfr_mul(temp3, temp3, temp3, MPFR_RNDZ);
-    mpfr_mul(temp4, y, y, MPFR_RNDZ);
-    mpfr_add_ui(temp4, temp4, 1, MPFR_RNDZ);
-    mpfr_mul(temp4, temp4, temp4, MPFR_RNDZ);
-    mpfr_mul(temp3, temp3, temp4, MPFR_RNDZ);
-    mpfr_mul_ui(temp3, temp3, 4, MPFR_RNDZ);
-
-    // result = temp1 + temp2 - temp3
-    mpfr_add(result, temp1, temp2, MPFR_RNDZ);
-    mpfr_sub(result, result, temp3, MPFR_RNDZ);
-
-    mpfr_clears(temp1, temp2, temp3, temp4, NULL);
-}
 
 void DxExact(mpfr_t result, mpfr_t x, mpfr_t y) {
     mpfr_t temp1, temp2, temp3, temp4;

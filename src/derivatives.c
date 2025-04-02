@@ -279,8 +279,8 @@ int main(int argc, char *argv[]) {
         //fprintf(stderr, "nect chart is %d \n", chart(f(p)));
 
 
-        fprintf(stderr, "(D psi_%d)_{x_%d^c} =  \n", i,i);
-        printMatrix(temp4, 3, 2);
+        //fprintf(stderr, "(D psi_%d)_{x_%d^c} =  \n", i,i);
+        //printMatrix(temp4, 3, 2);
         //fprintf(stderr, "(D phi_{k_%d})_{x_{%d}} =  \n", i+1, i+1);
         //printMatrix(temp5, 2, 3);
 
@@ -294,7 +294,7 @@ int main(int argc, char *argv[]) {
         multiplyMatrices(y_mat, x_mat, temp2, 3, 3, 3, 3);
         multiplyMatrices(z_mat, temp2, temp3, 3, 3, 3, 3);
         //fprintf(stderr, "(Df}_{x_%d} =  \n", i);
-       //printMatrix(temp3, 3, 3);
+        //printMatrix(temp3, 3, 3);
 
         multiplyMatricesAux(temp3, matrix, temp1, 3, 3, 3, 3);
 
@@ -304,7 +304,7 @@ int main(int argc, char *argv[]) {
         printMatrix(temp4, 2, 2);
 
 
-        multiplyMatricesAux(temp4, coordmatrix, temp1, 2, 2, 2, 2);
+        multiplyMatricesAux(temp4, coordmatrix, temp1, 2, 2, 2, 2); //coordmatrix is a copy of temp4
 
     }
 
@@ -490,8 +490,4 @@ int chart(point p){
     }
     return 0;
 }
-
-
-
-//notice: p_+(-x, y) = -p_-(x,y)
 */

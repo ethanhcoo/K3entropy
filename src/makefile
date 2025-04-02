@@ -4,7 +4,7 @@ LDFLAGS = -L/opt/homebrew/lib -lmpfr -lgmp #-lmpfr -lgmp used for precision calc
 BIN    = ../bin
 CC     = gcc
 
-all:	stable mclass periodic RecurrentOrbit derivatives# traj
+all:	stable mclass periodic periodicExact derivatives derivativesExact 
 
 stable:	stable.o k3.o ps.o 
 	${CC} stable.o k3.o ps.o -lm -o ${BIN}/stable
@@ -15,14 +15,14 @@ mclass: mclass.o k3.o ps.o
 periodic: periodic.o k3.o ps.o 
 	${CC} periodic.o k3.o ps.o ${LDFLAGS} -lm -o ${BIN}/periodic
 
-RecurrentOrbit: RecurrentOrbit.o k3.o ps.o 
-	${CC} RecurrentOrbit.o k3.o ps.o ${LDFLAGS} -lm -o ${BIN}/RecurrentOrbit
+periodicExact: periodicExact.o k3.o ps.o 
+	${CC} periodicExact.o k3.o ps.o ${LDFLAGS} -lm -o ${BIN}/periodicExact
 	
 derivatives: derivatives.o k3.o ps.o 
 	${CC} derivatives.o k3.o ps.o ${LDFLAGS} -lm -o ${BIN}/derivatives
 
+derivativesExact: derivativesExact.o k3.o ps.o 
+	${CC} derivativesExact.o k3.o ps.o ${LDFLAGS} -lm -o ${BIN}/derivativesExact
+
 clean:
 	rm -f *.o ${BIN}/*
-#traj:   traj.o k3.o cx.o scan.o 
-#	${CC} traj.o k3.o cx.o scan.o -lm -o ${BIN}/traj
-
