@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <mpfr.h> 
 
 static double centerx = CENTERX, centery = CENTERY, radius = RADIUS;
 static double length=LENGTH, sep = SEP;
@@ -278,8 +279,8 @@ int main(int argc, char *argv[]) {
         //fprintf(stderr, "nect chart is %d \n", chart(f(p)));
 
 
-        //fprintf(stderr, "(D psi_%d)_{x_%d^c} =  \n", i,i);
-        //printMatrix(temp4, 3, 2);
+        fprintf(stderr, "(D psi_%d)_{x_%d^c} =  \n", i,i);
+        printMatrix(temp4, 3, 2);
         //fprintf(stderr, "(D phi_{k_%d})_{x_{%d}} =  \n", i+1, i+1);
         //printMatrix(temp5, 2, 3);
 
@@ -390,7 +391,7 @@ double py(double s, double t) {
 }
 
 int chart(point p){
-    double d1 = D1(p);
+    double d1 =  D1(p);
     double d2 = D2(p);
     double d3 = D3(p);
 

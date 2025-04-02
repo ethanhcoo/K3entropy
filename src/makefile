@@ -1,6 +1,6 @@
 
-CFLAGS = -g -I/opt/homebrew/include #changed from -g
-LDFLAGS = -L/opt/homebrew/lib -lgmp #added this
+CFLAGS = -g -I/opt/homebrew/include #changed from '-g'
+LDFLAGS = -L/opt/homebrew/lib -lmpfr -lgmp #-lmpfr -lgmp used for precision calculations
 BIN    = ../bin
 CC     = gcc
 
@@ -19,8 +19,10 @@ RecurrentOrbit: RecurrentOrbit.o k3.o ps.o
 	${CC} RecurrentOrbit.o k3.o ps.o ${LDFLAGS} -lm -o ${BIN}/RecurrentOrbit
 	
 derivatives: derivatives.o k3.o ps.o 
-	${CC} derivatives.o k3.o ps.o -lm -o ${BIN}/derivatives
+	${CC} derivatives.o k3.o ps.o ${LDFLAGS} -lm -o ${BIN}/derivatives
 
+clean:
+	rm -f *.o ${BIN}/*
 #traj:   traj.o k3.o cx.o scan.o 
 #	${CC} traj.o k3.o cx.o scan.o -lm -o ${BIN}/traj
 

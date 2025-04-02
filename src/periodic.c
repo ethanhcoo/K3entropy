@@ -1,7 +1,6 @@
 
 /* For finding recurrent points with controllable precision */
 
-
 #include <math.h>
 #include "k3.h"
 #include <math.h>
