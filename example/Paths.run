@@ -1,0 +1,3 @@
+
+../bin/paths -r 10 -e .0002 -p 10 2 -l 3 | ps2pdf - > paths.pdf 
+open paths.pdf &

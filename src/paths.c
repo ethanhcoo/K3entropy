@@ -1,57 +1,287 @@
-
-/* Stable:  draws stable manifold of K3 dynamical systems */
-/* Writes to stdout a Postscript file */
-
 #include "k3.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 
-
+//Plotting data
 static double centerx = CENTERX, centery = CENTERY, radius = RADIUS;
 static double length=LENGTH, sep = SEP;
 static int drawtop = 1, drawbot = 1, verbose=VERBOSE, spin=0, unravel = 0;
 
+//Very large array to dynamically store paths
+point ps[PSMAX];
 
-
-//very important for determine_arrays
-int pos_array[PSMAX]; //HOW BIG SHOULD I MAKE THESE??
+//Initialize arrays to path position data; used in determine_arrays
+int pos_array[PSMAX]; 
 int above_array[PSMAX];
 
-int orbit_length = 23;
-const char *word[PSMAX];
+//Orbit_length is the order of the periodic point we are using
+int orbit_length = 10; 
+
+//Constants
 int above = -100000;
 int current_pos = -10000;
 
-point initial_point()
-{
-	point p;
-	p = lift(sep/10,-sep/10);
-	return(p);
-}
+/*Function declarations & descriptions*/
 
-void draw_manifold() //this will no longer work since I changed f from sym(x(y(z))) to x(y(z)), and thus f no longer has a fixed point at (0,0,1).
-{
-	int i, n;
-	double tot, t;
-	n=1;
-	ps[0] = initial_point();
-	ps[1] = f(ps[0]);
-	draw_path(n);
-	tot=pathlength(n);
-	while(length > tot)
-	{	n=fpath(ps,n);
-		tot = tot + pathlength(n);
-		di(ps,n);
-		draw_path(n);
+int connect_path(point z, point w, int k);
+// connects z and w by a straightline and gradient-flows to surface. 
+// Stores path f^k(p) in ps[]. Returns array length
+
+int diagonal_path(double delta);
+//draws {x = -z} \cap X(\R)
+
+int diagonal_path_near(point q, double delta);
+//draws x = -z near p
+
+
+void fully_simplify_arrays(int *arr1, int *arr2, int *size);
+//fully simplifies array_pos and array_height
+
+void plot_orbit(point marked_orbit[], point z, int n);
+//sets marked_orbit = {z, f z, f^2 z, ... , f^n z} and prints orbit points
+
+void draw_background(point z, int n);
+//sketches X(\R) by plotting many f-iterates of z
+
+void draw_path(int n);
+//plots ps[0] to ps[n] on X(\R) as a path. path is orange if on bottom of projection.
+
+void determine_position(double *x_vals, double *y_vals, point p);
+// If ps[t] is between ith and i+1st punctures, determine_position sets the universally declared variable current_pos equal to i+1
+
+void determine_arrays(double *x_vals, double *y_vals, int *pos, int *height, int *m, point *marked_orbit, int *b);
+//Encodes data of path stored in ps[] of length m
+		// punctures in the plane are indexed from left to right. 
+		// if the path begins at the ith puncture, then pos[0] = i and height[0] = -1000
+		// when the path passes above/below a puncture, the index of the puncture is appended to pos[]
+		// when the path passes above a puncture, 1 is appended to height[]
+		// when the path passes below a puncture, 0 is appended to height[]
+		// if the path ends at the jth puncture, then pos[b-1] = j and height[b-1] = -1000
+// x_vals, y_vals are coordinates for the periodic orbit
+// pos and height are the output arrays. 
+// b is the length of pos and height -- it must start at 1, and will be increased throughout the program
+
+int compare(const void *a, const void *b);
+// p1 < p2 if p1.x < p2.x after normalization and stereo projection through 0,0,1
+
+bool simplify_arrays(int *arr1, int *arr2, int *size);
+// if a simplification is possible, performs it and returns true. otherwise, returns false
+
+void fully_simplify_arrays(int *arr1, int *arr2, int *size) ;
+// fully simplifies array_pos and array_height
+
+int main(int argc, char *argv[]) {
+	int i,n;
+	double a,b;
+
+	//read-in values from paths.run
+	for(i=1; i<argc; i++)
+	{	if(argv[i][0] != '-') usage();
+		switch(argv[i][1])
+	{
+		case 'b':
+		drawtop = 0;
+		break;
+
+		case 'c':
+		if(argc <= (i+2)) usage();
+		sscanf(argv[++i],"%lf",&centerx);
+		sscanf(argv[++i],"%lf",&centery);
+		break;
+
+		case 'e':
+		if(argc <= (i+1)) usage();
+		sscanf(argv[++i],"%lf",&sep);
+		setsep(sep);
+		break;
+
+		case 'l':
+		if(argc <= (i+1)) usage();
+		sscanf(argv[++i],"%lf",&length);
+		break;
+
+		case 'p':
+		if(argc <= (i+2)) usage();
+		sscanf(argv[++i],"%lf",&a);
+		sscanf(argv[++i],"%lf",&b);
+		setk3(a,b);
+		break;
+
+		case 'q':
+		verbose = 0;
+		break;
+
+		case 'r':
+		if(argc <= (i+1)) usage();
+		sscanf(argv[++i],"%lf",&radius);
+		break;
+
+		case 's':
+		spin = 1;
+		break;
+
+		case 't':
+		drawbot = 0;
+		break;
+
+		case 'u': 
+		unravel = 1;
+		break;
+
+		default:
+		usage();
 	}
-	if(verbose) 
-		fprintf(stderr,"Total path length:  %.2lf\n",tot);
+	}
+
+
+	//Create (orbit_length-1) pos/height arrays to record paths 
+	int **array_pos = malloc((orbit_length-1) * sizeof(int*));
+	int **array_height = malloc((orbit_length -1) * sizeof(int*));
+	int path_lengths[orbit_length-1];
+
+	
+	//Allocate memory for each array
+	for (int i = 0; i < orbit_length-1; i++) {
+        array_pos[i] = malloc(100000 * sizeof(int)); //100,000 might not be enough - make larger if causing problems!!!!
+		array_height[i] = malloc(100000 * sizeof(int));
+    }
+
+	//Initialize path_lengths = 1
+	for (int i = 0; i < orbit_length-1; i++) { 
+        path_lengths[i] = 1;
+    }
+
+	//open postscript file, declare window
+	ps_open(argc,argv);
+	ps_window(centerx,centery,radius);
+	
+	//draw background
+	point starter = lift(.1,.1);
+	draw_background(starter,20000);
+
+	//store finite orbit in marked_orbit, and plot orbit
+	point marked_orbit[orbit_length];
+	point marked_point;
+	marked_point.x = -1.726895448754858426328854724474;  
+	marked_point.y = 1.041643093944314148360673792017;
+	marked_point.z = 1.726895448754858426328854724474;
+	plot_orbit(marked_orbit, marked_point, orbit_length);
+
+
+	//sort finite_orbit from left to right  after normalization and stereo projection through 0,0,1
+	qsort(marked_orbit, orbit_length, sizeof(point), compare);
+	
+	//store x,y coordinates of finite orbit after normalization and stereo projection through 0,0,1
+	double x_vals[orbit_length];
+	double y_vals[orbit_length];
+
+	for(int i = 0; i < orbit_length; i++){
+		x_vals[i] = transform(marked_orbit[i]).x;
+		y_vals[i] = transform(marked_orbit[i]).y;
+	}
+	
+	fprintf(stderr, "Finite orbit stored\n");
+	
+
+	//index of path to be plotted
+	int example = 5;
+
+
+
+	int m = 1;
+	for(int i = 0; i < orbit_length-1; i++){ 
+		// connect_path(x,y,k) connects x and y via a path p and stores f^k(p) in ps[].
+		// m is the length of the output
+		m = connect_path(marked_orbit[i], marked_orbit[i+1], 1);
+
+		//plots the points of ps[] from 0 to m-1 in postscript
+		draw_path(m-1);
+				
+		//determines over/under arrays from ps[] data
+		determine_arrays(x_vals, y_vals, array_pos[i], array_height[i], &m, marked_orbit, &path_lengths[i]);		
+	}
+	
+	fprintf(stderr, "Done determining arrays\n");
+	
+
+	//simplify arrays
+	for(int i = 0; i<orbit_length-1; i++){ 
+		fully_simplify_arrays(array_pos[i], array_height[i], &path_lengths[i]);
+	}
+	fprintf(stderr, "Done simplifying arrays\n");
+
+
+	//print contents of arrays
+
+	fprintf(stderr, "path_lengths = {");
+	for (int j = 0; j < orbit_length-1; j++) {
+		fprintf(stderr,"%d", path_lengths[j]);
+		if (j < orbit_length - 2) {
+			fprintf(stderr, ", ");
+		}
+	}
+	fprintf(stderr,"};\n");
+
+	fprintf(stderr, "array_pos = {\n");
+	for (int i = 0; i < orbit_length -1 ; i++) {
+		fprintf(stderr,"    {");
+		for (int j = 0; j < path_lengths[i]; j++) {
+			fprintf(stderr,"%d", array_pos[i][j]);
+			if (j < path_lengths[i] - 1) {
+				fprintf(stderr,", ");
+			}
+		}
+		fprintf(stderr,"}");
+		if (i < orbit_length - 2) {
+			fprintf(stderr,",");
+		}
+		fprintf(stderr,"\n");
+	}
+	fprintf(stderr,"};\n");
+
+	fprintf(stderr,"array_height = {\n");
+	for (int i = 0; i < orbit_length -1 ; i++) {
+		fprintf(stderr, "    {");
+		for (int j = 0; j < path_lengths[i]; j++) {
+			fprintf(stderr, "%d", array_height[i][j]);
+			if (j < path_lengths[i] - 1) {
+				fprintf(stderr, ", ");
+			}
+		}
+		fprintf(stderr, "}");
+		if (i < orbit_length - 2) {
+			fprintf(stderr, ",");
+		}
+		fprintf(stderr, "\n");
+	}
+	fprintf(stderr, "};\n");
+
+	//close postscript file
+	ps_close();
+
+	exit(0);
 }
 
-int connect_path(point z, point w, int k) /*connects z and w by a straightline and gradient-flows to surface. Iterates path by f^k times. Returns array length( not, MINUS ONE).*/
-{
+
+void usage() {
+	fprintf(stderr,"Usage:  stable [options]\n");
+	fprintf(stderr,"  -b          draw only bottom\n");
+	fprintf(stderr,"  -c [x y]    window center\n");
+	fprintf(stderr,"  -e [eps]    accuracy\n");
+	fprintf(stderr,"  -l [length] length of stable manifold drawn\n");
+	fprintf(stderr,"  -p [a b]    K3 parameters\n");
+	fprintf(stderr,"  -q          quiet\n");
+	fprintf(stderr,"  -r [r]      window radius\n");
+	fprintf(stderr,"  -s          spin picture\n");
+	fprintf(stderr,"  -t          draw only top\n");
+	fprintf(stderr,"Postscript file written to stdout\n");
+	exit(1);
+}
+
+int connect_path(point z, point w, int k) {
+	//subdivision happens in the plane
 	int n;
 	point z_plane = transform(z);
 	point w_plane = transform(w);
@@ -59,174 +289,218 @@ int connect_path(point z, point w, int k) /*connects z and w by a straightline a
 	ps[1] = w;
 	n = dist(ps[0], ps[1])/sep;
 	ps[n] = ps[1]; 
-	subdivide_plane(ps[0], ps[1], ps, n); //edited so that initial path is just a path in the plane
-	for (int i = 0; i <k; ++i){
+
+	subdivide_plane(ps[0], ps[1], ps, n);
+
+	//iterate each sub-path by f
+	for (int i = 0; i < k; ++i){
 		n=fpath(ps,n);
+	}
+
+	return n+1; //stuff Curt coded runs on size - 1. this returns size.
+}
+
+int diagonal_path(double delta) {
+	int n = 0;
+	
+	double z = 0;
+	double x = -3.0;
+	double y = 3.0;
+	point p;
+	while(unreal(x,y)){
+		x = x + delta;
+		y = y - delta;
+	}
+	
+	double swap;
+
+	while(!unreal(x,y)){
+		p = lift(x,y);
+		swap = p.z;
+		p.z = p.y;
+		p.y = swap;
+		ps[n] = p;
+		x = x + delta;
+		y = y - delta;
+		n++;
+		//lenth of ps ++
+	}
+
+	while(unreal(x,y)){
+		x = x - delta;
+		y = y + delta;
+	}
+
+	while(!unreal(x,y)){
+		p = lift(x,y);
+		p = iz(p);
+		swap = p.z;
+		p.z = p.y;
+		p.y = swap;
+		ps[n] = p;
+		x = x - delta;
+		y = y + delta;
+		n++;
+		//lenth of ps ++
+	}
+	ps[n] = ps[0];
+	ps[n+1] = ps[1];
+	return n+1; 
+}
+
+int diagonal_path_near(point q, double delta) {
+	int n = 0;
+	int l = 0;
+
+	pprint(q);
+	double z = 0;
+	double x = q.x - 100*delta;
+	double y = q.z + 100*delta;
+	point p;
+	while(unreal(x,y)){
+		x = x + delta;
+		y = y - delta;
+	}
+	
+	double swap;
+	point temp = iy(q);
+	while((!unreal(x,y)) && l < 201){
+		p = lift(x,y);
+		if(q.y <  temp.y){
+			p = iz(p);
+		}
+		swap = p.z;
+		p.z = p.y;
+		p.y = swap;
+		
+		ps[n] = p;
+		x = x + delta;
+		y = y - delta;
+		n++;
+		l++;
+		//lenth of ps ++
 	}
 	//draw_path(n); 
 	return n+1; //stuff Kurt coded runs on size - 1. this returns size.
 }
 
-void plot_orbit(point marked_orbit[], point z, int n)/*Ethan added this*/
-{
+void plot_orbit(point marked_orbit[], point z, int n){
 	marked_orbit[0] = z;
+	pprint(z);
 	for (int i = 0; i<n; i++){
 		marked_orbit[i] = z;
 		ps_dot(z, unravel);
+		pprint(z);
 		z = f(z);
 	}
 }
 
-void draw_background(point z, int n)/*Ethan added this*/
-{
+void draw_background(point z, int n){
 	for (int i = 0; i<n; i++){
 		ps_dot_transparent(z);
 		z = f(z);
 	}
 }
 
-void draw_path(int n)
-{
+void draw_path(int n){
 	int i;
 	point p, q;
 
 	for(i=0; i<n; i++)
 	{	p = ps[i]; q = ps[i+1];
-/*		if(rotate) {p=rotate(p); q=rotate(q);} */
+		//if(rotate) {p=rotate(p); q=rotate(q);} 
 		if(drawtop &&  top(p)) ps_line(p,q, unravel);
-		if(drawbot && !top(p)) ps_line_color(p,q, unravel); /*Ethan changed ps_line to ps_line_color to draw the bottom orange*/
+		if(drawbot && !top(p)) ps_line_color(p,q, unravel); 
 	}
 }
 
-double pathlength(int n)
-{
-	int i;
-	double d;
 
-	d=0;
-	for(i=0; i<n; i++) d = d + dist(ps[i],ps[i+1]);
-	return(d);
-}
+void determine_arrays(double *x_vals, double *y_vals, int *pos, int *height, int *m, point *marked_orbit, int *b) {	
 
-void di(point *ps,int n)
-{
-	double d;
+	pos_array[0] = -1000; //will be changed to starting position shortly
+	above_array[0] = -1000; //path_origin //above_array is used as an intermediate.
 
-	if(verbose)
-	{	d=pathlength(n);
-		fprintf(stderr,"Points: %8d; Length %.2lf\n",
-			n,d);
-	}
-}
-
-bool is_recurrent(point p) /*returns true of p is delta, k-recurrent for some k<=22*/
-{
-    double delta = .00002;
-	point q = f(p);
-    for (int k = 1; k <= 50; k++) {
-		if(dist(p, q) < delta) {
-			fprintf(stderr, "(%d)\n", k);
-			return true;
-    	}
-		q = f(q);
-    };
-    return false;
-}
-
-void recurrent_search() /*searches in epsilon-steps for points that are delta, k-recurrent for some k<=22*/
-{
-	double epsilon = .001;
-    double x = .1;
-	double y = .1;    
-    int length = radius/epsilon;
-    point p = lift(x,y);
-    for (int j = 1; j <= length; j++) {
-		for(int i = 1; i <= length; i++){
-		    if(!unreal(x,y)){
-                point p = lift(x,y);
-                if(is_recurrent(p)) {
-                    fprintf(stderr, "Success at (%.5lf, %.5lf, %.5lf)\n", p.x, p.y, p.z);
-                };
-            };
-        	x = x + epsilon;
-		};
-		y = y + epsilon;
-		x = .1; //ethan changed
-    };
-}
-
-void determine_arrays(double *x_vals, double *y_vals, int *pos, int *height, int *m, point *marked_orbit, int *b) //input pointers to arrays and common array length
-{	
-	//records position of path
-	pos_array[0] = -1000;
-	above_array[0] = -1000; //path_origin
-
-	//fprintf(stderr, "Determine_arrays - initialized\n");
 
 	for(int t = 1; t < *m; t++){ 
-		determine_position(x_vals, y_vals, ps[t]);
-		//fprintf(stderr, "first position determined\n");
-		//fprintf(stderr, "value of b is %d\n", *b);
+		determine_position(x_vals, y_vals, ps[t]); 
+		
+		//runs on first iteration:
 		if(*b==1){
-			pos_array[*b] = current_pos;
-			//fprintf(stderr, "%f\n", transform(ps[t]).x);
+			pos_array[*b] = current_pos; //sets 
 			above_array[*b] = 0; //this does not matter
+
+			//increase b, skip the rest of the for loop
 			(*b)++;
-			//fprintf(stderr, "case 1\n");
-			continue;
+			continue; 		
 		}
-		//fprintf(stderr, "made it");
-		if(current_pos - pos_array[(*b)-1] == -1){ //moving left
-			//fprintf(stderr, "case 2\n");
+
+		//records previous array position
+		int last = pos_array[(*b)-1];
+
+		//checks if path is moving left, i.e. current_pos < pos_array[(*b)-1]
+		if(current_pos - last == -1){
+			//update pos_array
 			pos_array[*b] = current_pos;
-			//fprintf(stderr, " %d\n", current_pos);
-			if(transform(ps[t]).y > y_vals[current_pos]){
+
+			//determing if path is above or below puncture
+			if(transform(ps[t]).y > y_vals[current_pos]){ // change to: && transform(ps[t-1]).y > y_vals[current_pos]
 				above_array[*b] = 1;
-				//fprintf(stderr, " not here\n");
 			} else {
 				above_array[*b] = 0;
 			}
-			//fprintf(stderr, "(%d, %d)\n", pos_array[b], above_array[b]);
-			//determine_position(ps[t+200]);
-			//fprintf(stderr, "HERE %d\n", current_pos); //added for testing
-			//pprint(transform(ps[t+200]));
-			//fprintf(stderr, "%f\n", transform(ps[t+50]).x); //something off here: (1,0) not being counted
+
+			//increase b, skip the rest of the for loop
 			(*b)++;
-			continue;
+			continue; 
 		}
-		//fprintf(stderr, "made it");
-		if(current_pos - pos_array[(*b)-1] == 1){ //moving right
-			//fprintf(stderr, "case 3\n");
+
+		//checks if path is moving right, i.e. current_pos > pos_array[(*b)-1]
+		if(current_pos - pos_array[(*b)-1] == 1){ 
+			//update pos_array
 			pos_array[*b] = current_pos;
-			//fprintf(stderr, "%d", current_pos);
+
+			//determing if path is above or below puncture
 			if(transform(ps[t]).y > y_vals[pos_array[(*b)-1]]){
 				above_array[*b] = 1;
 			} else {
 				above_array[*b] = 0;
 			}
+			
+			//increase b, skip the rest of the for loop
 			(*b)++;
-			continue;
+			continue; 
 		}
-		int last = pos_array[(*b)-1];
-		if (pos_array[(*b)-1] < current_pos) { //moving right
-			//fprintf(stderr, "%d", current_pos);
-			for (int i = last + 1; i <= current_pos; i++) {
-				pos_array[*b] = i;
-				//fprintf(stderr, "%d", i);
+
+		// path is moving right,  but more than one puncture lies between ps[t-1] and ps[t] 
+		// in other words, current_pos - last > 1
+		if (last < current_pos) {
+			fprintf(stderr, "accounting for skipped punctures\n");
+
+			//iterate through skipped punctures, and make sure that ps[t-1] and ps[t] both above or both below skipped puncture
+			//throws error if ps[t-1] and ps[t] on different sides of a skipped puncture
+
+			for (int i = last; i <= current_pos-1; i++) { 
+				//update pos_array
+				pos_array[*b] = i+1; 
+				
 				if((transform(ps[t-1]).y > y_vals[i]) && (transform(ps[t]).y > y_vals[i])){
 					above_array[*b] = 1;
 				} else if((transform(ps[t-1]).y < y_vals[i]) && (transform(ps[t]).y < y_vals[i])){
 					above_array[*b] = 0;
 				} else{
-					fprintf(stderr, "issue with over/under\n");
+					fprintf(stderr, "here issue with over/under \n");
+					fprintf(stderr, "current_pos is (%d,%d, %d) \n", pos_array[*b], above_array[*b], *b);
 					abort();
-					//pprint(ps[t-1]);
-					//pprint(ps[t]);
-					//fprintf(stderr, "%f",  y_vals[i]); 
 				}
+				//increase b
 				(*b)++;
 			}
-    	} else if (pos_array[(*b)-1] > current_pos) { //moving left
+			//skip rest of for loop
+			continue; 
+    	}
+
+		//doing the same in the other direction:
+		if (pos_array[(*b)-1] > current_pos) { 
 			for (int i = last - 1; i >= current_pos; i--) {
 				pos_array[*b] = i;
 				if((transform(ps[t-1]).y > y_vals[i]) && (transform(ps[t]).y > y_vals[i])){
@@ -235,19 +509,14 @@ void determine_arrays(double *x_vals, double *y_vals, int *pos, int *height, int
 					above_array[*b] = 0;
 				} else{
 					fprintf(stderr, "issue with over/under");
+					fprintf(stderr, "current_pos is (%d,%d, %d) \n", pos_array[*b], above_array[*b], *b);
 					abort();
-					//pprint(ps[t-1]);
-					//pprint(ps[t]);
-					//fprintf(stderr, "%f",  y_vals[i]); 
 				}
-				//fprintf(stderr, "(%d, %d)\n", pos_array[b], above_array[b]);
 				(*b)++;
 			}
+			continue; 
 		}
-	}
-	//fprintf(stderr, "Determine_arrays - first half\n");
-
-	//length of pos_array = b
+	} //for loop ended!
 
 	//determine position of starting point. print error if fails
 	int test = 0;
@@ -255,7 +524,6 @@ void determine_arrays(double *x_vals, double *y_vals, int *pos, int *height, int
 		if(dist(transform(ps[0]), transform(marked_orbit[i]))<1e-2){
 			pos[0] = i;
 			test = 1;
-			//fprintf(stderr, "successful starting point assignment\n");
 			break;
 		}
 	}
@@ -264,6 +532,7 @@ void determine_arrays(double *x_vals, double *y_vals, int *pos, int *height, int
 		pprint(ps[0]);
 		abort();
 	}
+
 	// determine position of ending point. print error if fails
 	test = 0;
 	height[(*b)-1] = -1000;
@@ -271,7 +540,6 @@ void determine_arrays(double *x_vals, double *y_vals, int *pos, int *height, int
 		if(dist(transform(ps[(*m)-1]), transform(marked_orbit[i]))<1e-2){
 			pos[(*b)-1] = i;
 			test = 1;
-			//fprintf(stderr, "successful endpoint assignment to %d\n", i);
 			break;
 		}
 	}
@@ -282,6 +550,8 @@ void determine_arrays(double *x_vals, double *y_vals, int *pos, int *height, int
 	}
 	//determing position inbetween
 
+	//translate 'pos_array' to 'pos'
+	//translate 'above_array' to 'height'
 	height[0] = -1000;
 	for(int i = 1; i<(*b)-1; i++){
 		if((pos_array[i] < pos_array[i+1])){
@@ -301,8 +571,8 @@ void determine_arrays(double *x_vals, double *y_vals, int *pos, int *height, int
 			}
 		}
 	}
-	//length of pos = b
 }
+
 
 void determine_position(double *x_vals, double *y_vals, point p){
 	above = 0;
@@ -328,10 +598,10 @@ void determine_position(double *x_vals, double *y_vals, point p){
 			above = 1;
 		}
 	}
-	}
+}
 
-int compare(const void *a, const void *b) 
-{
+
+int compare(const void *a, const void *b) {
     double diff = stereo_proj(rescale(*(point*)a)).x - stereo_proj(rescale(*(point*)b)).x;
     if (diff < 0) return -1;
     else if (diff > 0) return 1;
@@ -378,455 +648,4 @@ void fully_simplify_arrays(int *arr1, int *arr2, int *size) {
     do {
         simplified = simplify_arrays(arr1, arr2, size);
     } while (simplified && *size > 2);
-}
-
-//must apply s to SIMPLIFIED sequences
-void s(int *arr1, int *arr2, int *size, int i) { //s_i makes COUNTERCLOCKWISE rotation
-	 //j=1 since skipping start and <*size-2 since skipping end
-	 //after changing array, is it okay to keep iterating?
-	 //moving right:
-	for (int j = 1; j < *size - 2; j++) { //*size - 1 increments after pointing, *size-- incremenents before pointing
-		//fprintf(stderr, "made it");
-        if (arr1[j] == i && arr2[j] == 1 && arr1[j + 1] == i + 1 && arr2[j + 1] == 0) {
-            arr2[j] = 0;
-            arr2[j + 1] = 1;
-			continue;
-        }
-		if (arr1[j] == i && arr2[j] == 0 && arr1[j + 1] == i + 1 && arr2[j + 1] == 1) {
-            // Make room for four new entries
-            for (int k = *size + 3; k >= j + 5; k--) {
-                arr1[k] = arr1[k - 4];
-                arr2[k] = arr2[k - 4];
-            }
-            // Insert the new sequence
-            arr1[j + 1] = i + 1; arr2[j + 1] = 0;
-            arr1[j + 2] = i + 1; arr2[j + 2] = 1;
-            arr1[j + 3] = i; arr2[j + 3] = 0;
-            arr1[j + 4] = i; arr2[j + 4] = 1;
-			j+=4;
-			(*size) +=4;
-			continue;
-		}
-
-		//moving left:
-		if (arr1[j+1] == i && arr2[j+1] == 1 && arr1[j] == i + 1 && arr2[j] == 0) {
-            arr2[j+1] = 0;
-            arr2[j] = 1;
-			continue;
-        }
-		if (arr1[j+1] == i && arr2[j+1] == 0 && arr1[j] == i + 1 && arr2[j] == 1) {
-            // Make room for four new entries
-            for (int k = *size + 3; k >= j + 5; k--) {
-                arr1[k] = arr1[k - 4];
-                arr2[k] = arr2[k - 4];
-            }
-            // Insert the new sequence
-            arr1[j + 4] = i + 1; arr2[j + 4] = 0;
-            arr1[j + 3] = i + 1; arr2[j + 3] = 1;
-            arr1[j + 2] = i; arr2[j + 2] = 0;
-            arr1[j + 1] = i; arr2[j + 1] = 1;
-			j+=4;
-			(*size) +=4;
-			continue;
-		}
-		//turning around
-		if(arr1[j] == i && arr1[j+1] == i && arr1[j+2] == i - 1){
-			int first = arr2[j];		
-			int second = arr2[j+1];
-			for (int k = *size + 1; k >= j + 4; k--) {
-                arr1[k] = arr1[k - 2];
-                arr2[k] = arr2[k - 2];
-            }
-            // Insert the new sequence
-            arr1[j] = i ; arr2[j] = 0;
-			arr1[j+1] = i+1 ; arr2[j+1] = first;
-			arr1[j+2] = i+1 ; arr2[j+2] = second;
-            arr1[j+3] = i ; arr2[j + 3] = 0;
-			j+=4;
-			(*size) +=2;
-			continue;
-		}
-		//turning atound
-		if(arr1[j] == i+1 && arr1[j+1] == i+1  && arr1[j+2] == i + 2){
-			int first = arr2[j];		
-			int second = arr2[j+1];
-			for (int k = *size + 1; k >= j + 4; k--) {
-                arr1[k] = arr1[k - 2];
-                arr2[k] = arr2[k - 2];
-            }
-            // Insert the new sequence
-            arr1[j] = i+1 ; arr2[j] = 1;
-			arr1[j+1] = i ; arr2[j+1] = first;
-			arr1[j+2] = i ; arr2[j+2] = second;
-            arr1[j+3] = i+1 ; arr2[j + 3] = 1;
-			j+=4;
-			(*size) +=2;
-			continue;
-		}
-    } 
-
-	//specific case for size = 2:
-	if(arr1[0]==i && arr1[1]==i+1 && *size == 2){
-		arr1[0] = i+1;
-		arr1[1] = i;
-	} else if(arr1[0]==i+1 && arr1[1]==i && *size == 2){
-		arr1[0] = i;
-		arr1[1] = i+1;
-	}
-
-	//change end of path before first move becuase changing size doesn't affect first move.
-	//works the same as changing start of path
-	if(arr1[*size-1]==i && arr1[*size-2]==i+1 && arr2[*size-2]== 0 ){
-		arr2[*size-2] = -1000;
-    	(*size)--;
-	 } else if(arr1[*size-1]==i && arr1[*size-2]==i+1 && arr2[*size-2]== 1){//ethan changed this
-    	arr1[*size+1] = i+1; arr2[*size+1] = -1000;
-		arr1[*size] = i; arr2[*size] = 0;
-		arr1[*size-1] = i; arr2[*size-1] = 1;
-    	(*size) += 2;
-	 }else if(arr1[*size-1]==i && arr1[*size-2]==i-1){ //SURE THIS WORKS???
-		/*for (int i = *size; i > 0; i--) {
-			arr1[i] = arr1[i - 1];
-			arr2[i] = arr2[i - 1];
-		}*/
-    	arr1[*size] = i+1; arr2[*size] = -1000;
-		arr1[*size-1] = i; arr2[*size-1] = 0;
-    	(*size) += 1;
-	 } 
-	//accounting for ith spot = i+1
-	 else if (arr1[*size-2]==i && arr1[*size-1]==i+1 && arr2[*size-2]== 1 ){ 	
-		arr2[*size-2] = -1000;
-    	(*size)--;
-	 } else if(arr1[*size-2]==i && arr1[*size-1]==i+1 && arr2[1]== 0 ){
-    	arr1[*size+1] = i; arr2[*size+1] = -1000;
-		arr1[*size] = i+1; arr2[*size] = 1;
-		arr1[*size-1] = i+1; arr2[*size-1] = 0;
-    	(*size) += 2;
-	 } 
-	 else if(arr1[*size-2]==i+2 && arr1[*size-1]==i+1){
-    	arr1[*size] = i; arr2[*size] = -1000;
-		arr1[*size-1] = i+1; arr2[*size-1] = 1;
-    	(*size) += 1;
-	 }
-
-	//first moves are different: need to test these more!
-	//accounting for ith spot = start
-	 if(arr1[0]==i && arr1[1]==i+1 && arr2[1]== 0 ){
-		for (int i = 0; i < *size - 1; i++) {
-        arr1[i] = arr1[i + 1];
-		arr2[i] = arr2[i + 1];
-    	}
-		arr2[0] = -1000;
-    	(*size)--;
-	 } else if(arr1[0]==i && arr1[1]==i+1 && arr2[1]== 1 ){
-		for (int i = *size + 1; i > 0; i--) {
-			arr1[i] = arr1[i - 2];
-			arr2[i] = arr2[i - 2];
-		}
-    	// Add the new entry to the beginning
-    	arr1[0] = i+1; arr2[0] = -1000;
-		arr1[1] = i; arr2[1] = 0;
-		arr1[2] = i; arr2[2] = 1;
-    	(*size) += 2;
-	 }else if(arr1[0]==i && arr1[1]==i-1){
-		for (int i = *size; i > 0; i--) {
-			arr1[i] = arr1[i - 1];
-			arr2[i] = arr2[i - 1];
-		}
-    	// Add the new entry to the beginning
-    	arr1[0] = i+1; arr2[0] = -1000;
-		arr1[1] = i; arr2[1] = 0;
-    	(*size) += 1;
-	 }
-
-	 //accounting for ith spot = i+1
-	 else if(arr1[1]==i && arr1[0]==i+1 && arr2[1]== 1 ){
-		for (int i = 0; i < *size - 1; i++) {
-        	arr1[i] = arr1[i + 1];
-			arr2[i] = arr2[i + 1];
-    	}
-		arr2[0] = -1000;
-    	(*size)--;
-	 } else if(arr1[1]==i && arr1[0]==i+1 && arr2[1]== 0 ){
-		for (int i = *size + 1; i > 0; i--) {
-			arr1[i] = arr1[i - 2];
-			arr2[i] = arr2[i - 2];
-		}
-    	// Add the new entry to the beginning
-    	arr1[0] = i; arr2[0] = -1000;
-		arr1[1] = i+1; arr2[1] = 1;
-		arr1[2] = i+1; arr2[2] = 0;
-    	(*size) += 2;
-	 } 
-	 else if(arr1[1]==i+2 && arr1[0]==i+1){
-		for (int i = *size + 1; i > 0; i--) {
-			arr1[i] = arr1[i - 1];
-			arr2[i] = arr2[i - 1];
-		}
-    	// Add the new entry to the beginning
-    	arr1[0] = i; arr2[0] = -1000;
-		arr1[1] = i+1; arr2[1] = 1;
-    	(*size) += 1;
-	 }
-
-	 //fully simplify result
-
-	fully_simplify_arrays(arr1, arr2, size);
-}
-
-void S(int *arr1, int *arr2, int *size, int i){
-	//flip
-	for(int i = 1; i < *size-1; i++){
-		if(arr2[i]==0){
-			arr2[i]=1;
-
-		} else if(arr2[i]==1){
-			arr2[i]=0;
-		}
-	}
-	
-	//apply s
-	s(arr1, arr2, size, i);
-
-	//flip
-	for(int i = 1; i < *size-1; i++){
-		if(arr2[i]==0){
-			arr2[i]=1;
-		} else if(arr2[i]==1){
-			//fprintf(stderr, "flipping");
-			arr2[i]=0;
-		}
-	}
-}
-
-bool simplifying_move(int *arr1, int *arr2, int *size, int *twistsy, int *len) {
-    bool simplified = false;
-	//fprintf(stderr, "inside\n");
-	//fprintf(stderr, "size is %d\n", *size);
-	//array should never have size 0 or 1
-	if(*size < 2){
-		fprintf(stderr, "ERROR: ARRAY TOO SMALL");
-	}
-	//return false if array is fully simplified
-	if(*size == 2){
-		return simplified;
-	}
-
-	//simplify otherwise
-	if(arr1[0] < arr1[1] && arr2[1] == 0){
-		//apply s_{arr1[0]}, append s_{arr1[0]} to twist array
-		twistsy[*len] = arr1[0];
-		//fprintf(stderr, "in deep %d \n", twists[*len]);
-		s(arr1, arr2, size, arr1[0]);
-		(*len)++;
-		simplified = true;
-		return simplified;
-
-	}
-	if(arr1[0] < arr1[1] && arr2[1] == 1){
-		//apply + append S_{arr1[0]}
-		twistsy[*len] = -arr1[0]-1;
-		//fprintf(stderr, "in deep %d \n", twists[*len]);
-		S(arr1, arr2, size, arr1[0]); //STILL MUST DEFINE S
-		(*len)++;
-		simplified = true;
-		return simplified;
-	}
-	if(arr1[0] > arr1[1] && arr2[1] == 1){
-		//apply + append s_{arr1[1]}
-		twistsy[*len] = arr1[1];
-		//fprintf(stderr, "in deep %d \n", twists[*len]);
-		s(arr1, arr2, size, arr1[1]);
-		(*len)++;
-		simplified = true;
-		return simplified;
-	}
-	if(arr1[0] > arr1[1] && arr2[1] == 0){
-		//apply + append S_{arr1[1]}
-		twistsy[*len] = -arr1[1]-1;
-		//fprintf(stderr, "in deep %d \n", twists[*len]);
-		S(arr1, arr2, size, arr1[1]);
-		(*len)++;
-		simplified = true;
-		return simplified;
-	}
-    fprintf(stderr, "ERROR: simplification failed");
-	return simplified;
-}
-
-void star_algorithm(int *arr1, int *arr2, int *size, int *twistsy, int *len, int k){//simplified until path starts at k and moves one step in postive direction.
-	// set length of twists to zero
-	//fprintf(stderr, "inside star!");
-	//*len = 0;
-	//int indicator = -5000; //1 = positive twist, 0 = negative twist
-	//int ind = -5000; // keeps track of location
-	for (int j = 0; j < *size; j++){
-			fprintf(stderr, "(%d, %d) \n", arr1[j], arr2[j]);
-	}
-	bool simplified;
-    do {
-		fprintf(stderr, "size is %d\n", *size);
-        simplified = simplifying_move(arr1, arr2, size, twistsy, len);
-			//print example path 
-		//for (int j = 0; j < *size; j++){
-		//	fprintf(stderr, "(%d, %d) \n", arr1[j], arr2[j]);
-		//}
-		
-    } while (simplified && *size > 2);
-	//fprintf(stderr, "inside star - simplified");
-	// move to integer
-	while(arr1[0] != k || arr1[*size - 1] != k+1){
-		//for(int i = 0; i < *size ;i++){
-		//	fprintf(stderr, "(%d, %d)\n", arr1[i], arr2[i]);
-		//}
-		if(arr1[0]>k){
-			twistsy[*len] = arr1[0]-1;
-			s(arr1, arr2, size, arr1[0]-1);
-			(*len)++;
-			//fprintf(stderr, "(%d, %d)\n", arr1[0], arr1[*size-1]);
-			
-			continue;
-		}
-		if(arr1[*size-1]< k+1){
-			twistsy[*len] = arr1[*size] - 1;
-			s(arr1, arr2, size, arr1[*size-1]);
-			(*len)++;
-			//fprintf(stderr, "(%d, %d) \n", arr1[0], arr1[*size-1]);
-			continue;
-		} 
-		if(arr1[*size-1]> k+1){
-			twistsy[*len] = arr1[*size-1]-1;
-			s(arr1, arr2, size, arr1[*size-1]-1);
-			(*len)++;
-			//fprintf(stderr, "(%d, %d) \n", arr1[0], arr1[*size-1]);
-			continue;
-		}
-		if(arr1[0]< k){
-			twistsy[*len] = arr1[0];
-			s(arr1, arr2, size, arr1[0]);
-			(*len)++;
-			//fprintf(stderr, "(%d, %d) \n", arr1[0], arr1[*size-1]);
-			continue;
-		}
-	}
-
-}
-
-void delete_indices(int *arr1, int *arr2, int *size, int *arr1_temp, int *arr2_temp, int k, int *len) {
-	int write_index = 0;
-	//important that path starts from right side of contracted path
-    for (int i = 0; i < *size; i++) {
-        if (arr1[i] >= k) { //strict??
-            arr1_temp[write_index] = arr1[i];
-            arr2_temp[write_index] = arr2[i];
-            write_index++;
-        }
-    }
-    *len = write_index;
-}
-
-
-
-void process_array(int *arr, int *size, int k) {
-	//fprintf(stderr, "inside process");
-	int location = k; //location of mega-strand
-	for(int i = 0; i < *size; i++) {
-		//fprintf(stderr, "location is %d\n", location);
-		//fprintf(stderr, "move is %d\n", arr[i]);
-		if(arr[i]>=0){
-			if(arr[i] == location){
-				for(int j = *size - 1 + k; j > i + k ; j--){
-					arr[j] = arr[j - k];
-				}
-				for(int j = i+1; j <= i + k; j++){
-					arr[j] = location-(j-i);
-				}
-				//for(int j = i; j <= i + k; j++){
-				//	fprintf(stderr, "appended %d\n", arr[j]);
-				//}
-				(*size) += k;
-				i+=k;
-				location++;
-				continue;
-			} else if(arr[i] == location-1){	
-				for(int j = *size - 1 + k; j >= i + k ; j--){
-					arr[j] = arr[j - k];
-				}
-				for(int j = 0; j < k; j++){
-					arr[i + j] = location-1-k + j;
-				}
-				//for(int j = i; j <= i + k; j++){
-				//	fprintf(stderr, "appended %d\n", arr[j]);
-				//}
-				(*size) += k;
-				i+=k;
-				location--;
-				continue;
-			}
-		} else if(arr[i]<0){
-			if(-arr[i]-1 == location){
-				for(int j = *size - 1 + k; j > i + k ; j--){
-					arr[j] = arr[j - k];
-				}
-				for(int j = i+1; j <= i + k; j++){
-					arr[j] = -location-1+(j-i); //is this right?
-				}
-				//for(int j = i; j <= i + k; j++){
-				//	fprintf(stderr, "appended %d\n", arr[j]);
-				//}
-				i+=k;
-				(*size) += k;
-				location++;
-				continue;
-			} else if(-arr[i]-1 == location-1){	
-				for(int j = *size - 1 + k; j >= i + k ; j--){
-					arr[j] = arr[j - k];
-				}
-				for(int j = i; j < i + k; j++){
-					arr[j] = -location +k - (j-i); //is this right?
-				}
-				//for(int j = i; j <= i + k; j++){
-				//	fprintf(stderr, "appended %d\n", arr[j]);
-				//}
-				(*size) += k;
-				i+=k;
-				location--;
-				continue;
-			}
-		}
-		//make space
-	}
-}
-
-void simplify_final_array(int *arr, int *size){
-    bool simplified;
-    do {
-        simplified = bool_simplify_final_array(arr, size);
-    } while (simplified);
-}
-
-bool bool_simplify_final_array(int *arr, int *size){
-	bool simplified = false;
-	for (int i = 0; i < *size-1 ; i++) {
-		// If consecutive terms add up to -1, skip them
-		if (arr[i] + arr[i + 1] == -1) {
-			//delete array elements
-			for(int j = i; j < *size - 2; j++){
-				arr[j] = arr[j + 2];
-			}
-			*size = (*size) -2;
-			simplified = true;
-			return simplified;
-		}
-	}
-	return simplified;
-}
-
-
-void reverse_array(int *arr, int size){
-	for (int i = 0; i < size / 2; i++) {
-        int temp = arr[i];
-        arr[i] = arr[size - 1 - i];
-        arr[size - 1 - i] = temp;
-	}
 }

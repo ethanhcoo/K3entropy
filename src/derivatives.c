@@ -1,6 +1,3 @@
-
-/* Calculates the derivative of f along an orbit */
-
 #include "k3.h"
 #include <math.h>
 #include <stdio.h>
@@ -12,17 +9,12 @@ static double centerx = CENTERX, centery = CENTERY, radius = RADIUS;
 static double length=LENGTH, sep = SEP;
 static int drawtop = 1, drawbot = 1, verbose=VERBOSE, spin=0, unravel = 0;
 
-int alpha = 10; //derivative bound requirements
-int beta = 10;
-
-//int A = 10;
-//int B = 2;
 
 double px(double s, double t);//partial_x p
 double py(double s, double t);//partal_y p
-double pxx(double s, double t);//partial_xx p
-double pxy(double s, double t);//partial_xy p
-double pyy(double s, double t);//partial_yy p
+//double pxx(double s, double t);//partial_xx p
+//double pxy(double s, double t);//partial_xy p
+//double pyy(double s, double t);//partial_yy p
 int chart(point p); //outputs a chart, labelled 1-6, which p belongs to (p might belong to two charts)
 double D(double x, double y);
 double Dx(double x, double y);//partial_x D
@@ -31,100 +23,23 @@ double Dxx(double x, double y);//partial_xx D
 double Dxy(double x, double y);//partial_xy D
 double Dyy(double x, double y);//partial_xx D
 
-double D1(point p);
-double D2(point p);
-double D3(point p);
+double D1(point p);// DIx
+double D2(point p);// DIy
+double D3(point p);// DIz
+
 int main(int argc, char *argv[]) {
-	int i,n;
-	double a,b;
-
-	//read in values from stable.run
-	for(i=1; i<argc; i++)
-	{	if(argv[i][0] != '-') usage();
-		switch(argv[i][1])
-	{
-		case 'b':
-		drawtop = 0;
-		break;
-
-		case 'c':
-		if(argc <= (i+2)) usage();
-		sscanf(argv[++i],"%lf",&centerx);
-		sscanf(argv[++i],"%lf",&centery);
-		break;
-
-		case 'e':
-		if(argc <= (i+1)) usage();
-		sscanf(argv[++i],"%lf",&sep);
-		setsep(sep);
-		break;
-
-		case 'l':
-		if(argc <= (i+1)) usage();
-		sscanf(argv[++i],"%lf",&length);
-		break;
-
-		case 'p':
-		if(argc <= (i+2)) usage();
-		sscanf(argv[++i],"%lf",&a);
-		sscanf(argv[++i],"%lf",&b);
-		setk3(a,b);
-		break;
-
-		case 'q':
-		verbose = 0;
-		break;
-
-		case 'r':
-		if(argc <= (i+1)) usage();
-		sscanf(argv[++i],"%lf",&radius);
-		break;
-
-		case 's':
-		spin = 1;
-		break;
-
-		case 't':
-		drawbot = 0;
-		break;
-
-		case 'u': /*ethan added unravel*/
-		unravel = 1;
-		break;
-
-		default:
-		usage();
-	}
-	}
-
 	
+    //starting point
 	point p;
     p.x = -1.726895448754;
     p.y = 1.0416430939367222401;
     p.z = 1.726895448754;
     
-    //lift(0.89407411600000000000, 0.00459969000000000000);
-    //point q = vtan(p);
-    // Allocate memory for the array of pointers
-   // double** tangent = (double**)malloc(3 * sizeof(double*));
-   // double** tangent2 = (double**)malloc(3 * sizeof(double*));
-
-    // Allocate memory for each row
-
-    /*
-    for (int i = 0; i < 3; ++i) {
-        tangent[i] = (double*)malloc(3 * sizeof(double));
-        tangent2[i] = (double*)malloc(3 * sizeof(double));
-    }
-    tangent[0][0] = q.x;
-    tangent[1][0] = q.y;
-    tangent[2][0] = q.z;
-
-    tangent2[0][0] = 0;
-    tangent2[1][0] = 0;
-    tangent2[2][0] = 0;*/
+    //iter = number of iterations of f
+    int iter = 10; 
 
 
+    //initialize matrices
     double** matrix = (double**)malloc(3 * sizeof(double*));
     double** coordmatrix = (double**)malloc(3 * sizeof(double*));
     double** matrix_temp = (double**)malloc(3 * sizeof(double*));
@@ -181,12 +96,9 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    //for(int i = 0; i <10; i++){
 
-        //pprint(p);
-        //p = f(p);
-    //}
-    int iter = 10;
+
+
     for(int i = 0; i <iter; i++){
 
         double a, b;
@@ -271,18 +183,15 @@ int main(int argc, char *argv[]) {
                 k++;
             }
         }
-        //Print Results
-        //fprintf(stderr, "x_%d =  \n", i);
-        //(p);
         
         fprintf(stderr, "chart is %d \n", chart(p));
-        //fprintf(stderr, "nect chart is %d \n", chart(f(p)));
+        fprintf(stderr, "nect chart is %d \n", chart(f(p)));
 
 
-        //fprintf(stderr, "(D psi_%d)_{x_%d^c} =  \n", i,i);
-        //printMatrix(temp4, 3, 2);
-        //fprintf(stderr, "(D phi_{k_%d})_{x_{%d}} =  \n", i+1, i+1);
-        //printMatrix(temp5, 2, 3);
+        fprintf(stderr, "(D psi_%d)_{x_%d^c} =  \n", i,i);
+        printMatrix(temp4, 3, 2);
+        fprintf(stderr, "(D phi_{k_%d})_{x_{%d}} =  \n", i+1, i+1);
+        printMatrix(temp5, 2, 3);
 
         Dix(p, x_mat); 
         p = ix(p);
@@ -293,8 +202,8 @@ int main(int argc, char *argv[]) {
 
         multiplyMatrices(y_mat, x_mat, temp2, 3, 3, 3, 3);
         multiplyMatrices(z_mat, temp2, temp3, 3, 3, 3, 3);
-        //fprintf(stderr, "(Df}_{x_%d} =  \n", i);
-        //printMatrix(temp3, 3, 3);
+        fprintf(stderr, "(Df}_{x_%d} =  \n", i);
+        printMatrix(temp3, 3, 3);
 
         multiplyMatricesAux(temp3, matrix, temp1, 3, 3, 3, 3);
 
@@ -304,7 +213,7 @@ int main(int argc, char *argv[]) {
         printMatrix(temp4, 2, 2);
 
 
-        multiplyMatricesAux(temp4, coordmatrix, temp1, 2, 2, 2, 2); //coordmatrix is a copy of temp4
+        //multiplyMatricesAux(temp4, coordmatrix, temp1, 2, 2, 2, 2); //coordmatrix is a copy of temp4
 
     }
 
@@ -317,21 +226,6 @@ int main(int argc, char *argv[]) {
 }
 
 
-void usage()
-{
-	fprintf(stderr,"Usage:  stable [options]\n");
-	fprintf(stderr,"  -b          draw only bottom\n");
-	fprintf(stderr,"  -c [x y]    window center\n");
-	fprintf(stderr,"  -e [eps]    accuracy\n");
-	fprintf(stderr,"  -l [length] length of stable manifold drawn\n");
-	fprintf(stderr,"  -p [a b]    K3 parameters\n");
-	fprintf(stderr,"  -q          quiet\n");
-	fprintf(stderr,"  -r [r]      window radius\n");
-	fprintf(stderr,"  -s          spin picture\n");
-	fprintf(stderr,"  -t          draw only top\n");
-	fprintf(stderr,"Postscript file written to stdout\n");
-	exit(1);
-}
 
 double D(double x, double y){
     double new = 100*x*x*y*y + 8*(1+x*x)*(1+y*y) - 4*(1+x*x)*(1+x*x)*(1+y*y)*(1+y*y);

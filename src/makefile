@@ -4,13 +4,7 @@ LDFLAGS = -L/opt/homebrew/lib -lmpfr -lgmp #-lmpfr -lgmp used for precision calc
 BIN    = ../bin
 CC     = gcc
 
-all:	stable mclass periodic periodicExact derivatives derivativesExact 
-
-stable:	stable.o k3.o ps.o 
-	${CC} stable.o k3.o ps.o -lm -o ${BIN}/stable
-
-mclass: mclass.o k3.o ps.o 
-	${CC} mclass.o k3.o ps.o -lm -o ${BIN}/mclass
+all:	periodic periodicExact derivatives derivativesExact paths mclass
 
 periodic: periodic.o k3.o ps.o 
 	${CC} periodic.o k3.o ps.o ${LDFLAGS} -lm -o ${BIN}/periodic
@@ -24,5 +18,11 @@ derivatives: derivatives.o k3.o ps.o
 derivativesExact: derivativesExact.o k3.o ps.o 
 	${CC} derivativesExact.o k3.o ps.o ${LDFLAGS} -lm -o ${BIN}/derivativesExact
 
+paths: paths.o k3.o ps.o 
+	${CC} paths.o k3.o ps.o -lm -o ${BIN}/paths
+
+mclass: mclass.o k3.o ps.o 
+	${CC} mclass.o k3.o ps.o -lm -o ${BIN}/mclass
+	
 clean:
 	rm -f *.o ${BIN}/*

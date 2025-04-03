@@ -6,11 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-//#include <gmp.h> //for precision orbits
 #include <stdarg.h>
-#include <mpfr.h> 
-//#include <mpf2mpfr.h>
-
+#include <mpfr.h>  //for precision calculations
 
 //new point structure
 typedef struct {
@@ -36,6 +33,7 @@ const int charts[10] = {6, 4, 5, 6, 5, 5, 5, 1, 5, 3};
 
 //function declarations
 
+/*reused from periodicExact*/
 void alphaExact(mpfr_t result, mpfr_t x, mpfr_t y); // [alpha]
 void betaExact(mpfr_t result, mpfr_t x, mpfr_t y); // [beta]
 void DExact(mpfr_t result, mpfr_t x, mpfr_t y); // [D]
@@ -49,28 +47,23 @@ void lift_exact_charts(mpfr_point *p,  mpfr_t x,  mpfr_t y, int i); // [Phi_k^{p
 void f_c(mpfr_t a,  mpfr_t b,  int i, int j); // [f_c] where i = incoming chart, j = outgoing chart
 void dist_2plane(mpfr_t result, mpfr_t a1, mpfr_t b1, mpfr_t a2, mpfr_t b2); // distance between (a1,b1) and (a2,b2)
 
-void multiplyMatricesExact(mpfr_t **firstMatrix, mpfr_t **secondMatrix, mpfr_t **result, int ROWS1, int COLS1, int ROWS2, int COLS2);
-void multiplyMatricesAuxExact(mpfr_t **firstMatrix, mpfr_t **secondMatrix, mpfr_t **result, int ROWS1, int COLS1, int ROWS2, int COLS2);
-void printMatrixExact(mpfr_t **matrix, int ROWS1, int COLS1);
-void DixExact(mpfr_point p, mpfr_t **matrix);
-void DiyExact(mpfr_point p, mpfr_t **matrix);
-void DizExact(mpfr_point p, mpfr_t **matrix);
-void DxExact(mpfr_t result, mpfr_t x, mpfr_t y);
-void DyExact(mpfr_t result, mpfr_t x, mpfr_t y);
-void DxxExact(mpfr_t result, mpfr_t x, mpfr_t y);
-void DyyExact(mpfr_t result, mpfr_t x, mpfr_t y);
-void DxyExact(mpfr_t result, mpfr_t x, mpfr_t y);
-void pxExact(mpfr_t result, mpfr_t s, mpfr_t t);
-void pyExact(mpfr_t result, mpfr_t s, mpfr_t t);
-double Dx(double x, double y) {
-    double result = 200 * x * y * y + 16 * x * (1 + y * y) - 16 * x * (1 + x * x) * (1 + y * y) * (1 + y * y);
-    return result;
-}
+/*new functions*/
+void DixExact(mpfr_point p, mpfr_t **matrix);// [DIx]
+void DiyExact(mpfr_point p, mpfr_t **matrix);// [DIy]
+void DizExact(mpfr_point p, mpfr_t **matrix);// [DIz]
+void DxExact(mpfr_t result, mpfr_t x, mpfr_t y);// [partial_x D]
+void DyExact(mpfr_t result, mpfr_t x, mpfr_t y);// [partial_y D]
+void DxxExact(mpfr_t result, mpfr_t x, mpfr_t y);// [partial_xx D]
+void DyyExact(mpfr_t result, mpfr_t x, mpfr_t y);// [partial_yy D]
+void DxyExact(mpfr_t result, mpfr_t x, mpfr_t y);// [partial_xy D]
+void pxExact(mpfr_t result, mpfr_t s, mpfr_t t);// [partial_x p]
+void pyExact(mpfr_t result, mpfr_t s, mpfr_t t);// [partial_y p]
+void alpha_xExact(mpfr_t result, const mpfr_t x, const mpfr_t y);// [partial_x alpha]
+void alpha_yExact(mpfr_t result, const mpfr_t x, const mpfr_t y);// [partial_y alpha]
+void multiplyMatricesExact(mpfr_t **firstMatrix, mpfr_t **secondMatrix, mpfr_t **result, int ROWS1, int COLS1, int ROWS2, int COLS2); //result = (firstMatrix)(secondMatrix)
+void multiplyMatricesAuxExact(mpfr_t **firstMatrix, mpfr_t **secondMatrix, mpfr_t **result, int ROWS1, int COLS1, int ROWS2, int COLS2); //secondMatrix = (firstMatrix)(secondMatrix)
+void printMatrixExact(mpfr_t **matrix, int ROWS1, int COLS1); //prints matrices
 
-void alpha_xExact(mpfr_t result, const mpfr_t x, const mpfr_t y);
-void alpha_yExact(mpfr_t result, const mpfr_t x, const mpfr_t y);
-
-mpfr_t ae, be;
 
 int main(int argc, char *argv[]) {
     //Setting default rounding mode
@@ -81,9 +74,6 @@ int main(int argc, char *argv[]) {
     mpfr_set_emin (-1073); mpfr_set_emax (1024); 
 
     //Initializing Matrices
-    mpfr_t** matrix = (mpfr_t**)malloc(3 * sizeof(mpfr_t*));
-    mpfr_t** coordmatrix = (mpfr_t**)malloc(3 * sizeof(mpfr_t*));
-    mpfr_t** matrix_temp = (mpfr_t**)malloc(3 * sizeof(mpfr_t*));
     mpfr_t** temp1 = (mpfr_t**)malloc(3 * sizeof(mpfr_t*));
     mpfr_t** temp2 = (mpfr_t**)malloc(3 * sizeof(mpfr_t*));
     mpfr_t** temp3 = (mpfr_t**)malloc(3 * sizeof(mpfr_t*));
@@ -94,9 +84,6 @@ int main(int argc, char *argv[]) {
     mpfr_t** z_mat = (mpfr_t**)malloc(3 * sizeof(mpfr_t*));
 
     for (int i = 0; i < 3; ++i) {
-        matrix[i] = (mpfr_t*)malloc(3 * sizeof(mpfr_t));
-        coordmatrix[i] = (mpfr_t*)malloc(3 * sizeof(mpfr_t));
-        matrix_temp[i] = (mpfr_t*)malloc(3 * sizeof(mpfr_t));
         temp1[i] = (mpfr_t*)malloc(3 * sizeof(mpfr_t));
         temp2[i] = (mpfr_t*)malloc(3 * sizeof(mpfr_t));
         temp3[i] = (mpfr_t*)malloc(3 * sizeof(mpfr_t));
@@ -107,9 +94,6 @@ int main(int argc, char *argv[]) {
         z_mat[i] = (mpfr_t*)malloc(3 * sizeof(mpfr_t));
 
         for (int j = 0; j < 3; ++j) {
-            mpfr_init(matrix[i][j]);
-            mpfr_init(coordmatrix[i][j]);
-            mpfr_init(matrix_temp[i][j]);
             mpfr_init(temp1[i][j]);
             mpfr_init(temp2[i][j]);
             mpfr_init(temp3[i][j]);
@@ -120,9 +104,6 @@ int main(int argc, char *argv[]) {
             mpfr_init(z_mat[i][j]);
 
             if (i == j) {
-                mpfr_set_ui(matrix[i][j], 1, MPFR_RNDZ);
-                mpfr_set_ui(coordmatrix[i][j], 1, MPFR_RNDZ);
-                mpfr_set_ui(matrix_temp[i][j], 1, MPFR_RNDZ);
                 mpfr_set_ui(temp1[i][j], 1, MPFR_RNDZ);
                 mpfr_set_ui(temp2[i][j], 1, MPFR_RNDZ);
                 mpfr_set_ui(temp3[i][j], 1, MPFR_RNDZ);
@@ -132,9 +113,6 @@ int main(int argc, char *argv[]) {
                 mpfr_set_ui(y_mat[i][j], 1, MPFR_RNDZ);
                 mpfr_set_ui(z_mat[i][j], 1, MPFR_RNDZ);
             } else {
-                mpfr_set_ui(matrix[i][j], 0, MPFR_RNDZ);
-                mpfr_set_ui(coordmatrix[i][j], 0, MPFR_RNDZ);
-                mpfr_set_ui(matrix_temp[i][j], 0, MPFR_RNDZ);
                 mpfr_set_ui(temp1[i][j], 0, MPFR_RNDZ);
                 mpfr_set_ui(temp2[i][j], 0, MPFR_RNDZ);
                 mpfr_set_ui(temp3[i][j], 0, MPFR_RNDZ);
