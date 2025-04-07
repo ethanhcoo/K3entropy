@@ -23,7 +23,7 @@ int orbit_length = 10;
 int above = -100000;
 int current_pos = -10000;
 
-/*Function declarations & descriptions*/
+/*Function headers & descriptions*/
 
 int connect_path(point z, point w, int k);
 // connects z and w by a straightline and gradient-flows to surface. 
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
 	
 	//draw background
 	point starter = lift(.1,.1);
-	draw_background(starter,20000);
+	draw_background(starter, 20000);
 
 	//store finite orbit in marked_orbit, and plot orbit
 	point marked_orbit[orbit_length];
@@ -215,7 +215,7 @@ int main(int argc, char *argv[]) {
 
 	//print contents of arrays
 
-	fprintf(stderr, "path_lengths = {");
+	fprintf(stderr, "int path_lengths[orbit_length-1] = {");
 	for (int j = 0; j < orbit_length-1; j++) {
 		fprintf(stderr,"%d", path_lengths[j]);
 		if (j < orbit_length - 2) {
@@ -224,7 +224,7 @@ int main(int argc, char *argv[]) {
 	}
 	fprintf(stderr,"};\n");
 
-	fprintf(stderr, "array_pos = {\n");
+	fprintf(stderr, "int array_pos[orbit_length-1][10000] = {\n");
 	for (int i = 0; i < orbit_length -1 ; i++) {
 		fprintf(stderr,"    {");
 		for (int j = 0; j < path_lengths[i]; j++) {
@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
 	}
 	fprintf(stderr,"};\n");
 
-	fprintf(stderr,"array_height = {\n");
+	fprintf(stderr,"int array_height[orbit_length-1][10000] = {\n");
 	for (int i = 0; i < orbit_length -1 ; i++) {
 		fprintf(stderr, "    {");
 		for (int j = 0; j < path_lengths[i]; j++) {
