@@ -7,7 +7,7 @@
 //Plotting data
 static double centerx = CENTERX, centery = CENTERY, radius = RADIUS;
 static double length=LENGTH, sep = SEP;
-static int drawtop = 1, drawbot = 1, verbose=VERBOSE, spin=0, unravel = 0;
+static int drawtop = 1, drawbot = 1, verbose=VERBOSE, spin=0, unravel = 1, example = -1, iterations = -1;
 
 //Very large array to dynamically store paths
 point ps[PSMAX];
@@ -130,6 +130,16 @@ int main(int argc, char *argv[]) {
 		unravel = 1;
 		break;
 
+		case 'v':
+		if(argc <= (i+1)) usage();
+		sscanf(argv[++i],"%d",&example);
+		break;
+
+		case 'w':
+		if(argc <= (i+1)) usage();
+		sscanf(argv[++i],"%d",&iterations);
+		break;
+
 		default:
 		usage();
 	}
@@ -157,9 +167,9 @@ int main(int argc, char *argv[]) {
 	ps_open(argc,argv);
 	ps_window(centerx,centery,radius);
 	
-	//draw background
+	//draw background. commment out if unravel = 1
 	point starter = lift(.1,.1);
-	draw_background(starter, 20000);
+	//draw_background(starter, 200000);
 
 	//store finite orbit in marked_orbit, and plot orbit
 	point marked_orbit[orbit_length];
@@ -186,7 +196,7 @@ int main(int argc, char *argv[]) {
 	
 
 	//index of path to be plotted
-	int example = 5;
+	//int example = 1;
 
 
 
@@ -194,14 +204,23 @@ int main(int argc, char *argv[]) {
 	for(int i = 0; i < orbit_length-1; i++){ 
 		// connect_path(x,y,k) connects x and y via a path p and stores f^k(p) in ps[].
 		// m is the length of the output
-		m = connect_path(marked_orbit[i], marked_orbit[i+1], 1);
+		
+		m = connect_path(marked_orbit[i], marked_orbit[i+1], iterations);
 
 		//plots the points of ps[] from 0 to m-1 in postscript
-		draw_path(m-1);
+		if(example == -1){
+			draw_path(m-1);
+		}
+		if(example == i){
+			draw_path(m-1);
+		}
+		
 				
 		//determines over/under arrays from ps[] data
 		determine_arrays(x_vals, y_vals, array_pos[i], array_height[i], &m, marked_orbit, &path_lengths[i]);		
 	}
+
+	abort();
 	
 	fprintf(stderr, "Done determining arrays\n");
 	
@@ -381,7 +400,7 @@ int diagonal_path_near(point q, double delta) {
 		//lenth of ps ++
 	}
 	//draw_path(n); 
-	return n+1; //stuff Kurt coded runs on size - 1. this returns size.
+	return n+1; //differs from Curt's code
 }
 
 void plot_orbit(point marked_orbit[], point z, int n){
@@ -409,8 +428,8 @@ void draw_path(int n){
 	for(i=0; i<n; i++)
 	{	p = ps[i]; q = ps[i+1];
 		//if(rotate) {p=rotate(p); q=rotate(q);} 
-		if(drawtop &&  top(p)) ps_line(p,q, unravel);
-		if(drawbot && !top(p)) ps_line_color(p,q, unravel); 
+		if(drawtop) ps_line(p,q, unravel);
+		//if(drawbot && !top(p)) ps_line_color(p,q, unravel); 
 	}
 }
 
