@@ -1,3 +1,6 @@
+//NOTES:
+	//line width and dot side can be changed in ps.c 
+
 #include "k3.h"
 #include <math.h>
 #include <stdio.h>
@@ -7,7 +10,7 @@
 //Plotting data
 static double centerx = CENTERX, centery = CENTERY, radius = RADIUS;
 static double length=LENGTH, sep = SEP;
-static int drawtop = 1, drawbot = 1, verbose=VERBOSE, spin=0, unravel = 1, example = -1, iterations = -1;
+static int drawtop = 1, drawbot = 1, verbose=VERBOSE, spin=0, unravel = 0, example = -1, iterations = -1;
 
 //Very large array to dynamically store paths
 point ps[PSMAX];
@@ -97,11 +100,6 @@ int main(int argc, char *argv[]) {
 		setsep(sep);
 		break;
 
-		case 'l':
-		if(argc <= (i+1)) usage();
-		sscanf(argv[++i],"%lf",&length);
-		break;
-
 		case 'p':
 		if(argc <= (i+2)) usage();
 		sscanf(argv[++i],"%lf",&a);
@@ -116,10 +114,6 @@ int main(int argc, char *argv[]) {
 		case 'r':
 		if(argc <= (i+1)) usage();
 		sscanf(argv[++i],"%lf",&radius);
-		break;
-
-		case 's':
-		spin = 1;
 		break;
 
 		case 't':
@@ -146,6 +140,12 @@ int main(int argc, char *argv[]) {
 	}
 
 
+	//Enter periodic point here
+point marked_point;
+marked_point.x = -1.726895448754858426328854724474;  
+marked_point.y = 1.041643093944314148360673792017;
+marked_point.z = 1.726895448754858426328854724474;
+
 	//Create (orbit_length-1) pos/height arrays to record paths 
 	int **array_pos = malloc((orbit_length-1) * sizeof(int*));
 	int **array_height = malloc((orbit_length -1) * sizeof(int*));
@@ -167,18 +167,35 @@ int main(int argc, char *argv[]) {
 	ps_open(argc,argv);
 	ps_window(centerx,centery,radius);
 	
-	//draw background. commment out if unravel = 1
-	point starter = lift(.1,.1);
-	//draw_background(starter, 200000);
-
+	//draw background. COMMENT out if unravel = 1
+	if(unravel != 1){
+		point starter = lift(.1,.1);
+		draw_background(starter, 200000);
+	}
+	
 	//store finite orbit in marked_orbit, and plot orbit
 	point marked_orbit[orbit_length];
-	point marked_point;
-	marked_point.x = -1.726895448754858426328854724474;  
-	marked_point.y = 1.041643093944314148360673792017;
-	marked_point.z = 1.726895448754858426328854724474;
 	plot_orbit(marked_orbit, marked_point, orbit_length);
 
+
+	// Uncomment the following code to produce figure showing intersection of {z = -w} and f^5({z = -w})
+	/*
+	int well = diagonal_path_near(marked_orbit[0], .001);
+	n = well;
+	draw_path(n-2);
+
+	well = diagonal_path_near(marked_orbit[5], 5e-6);
+	n = well - 2;
+
+	for (int i = 0; i <5; ++i){
+		n=fpath(ps, n);
+	}
+	fprintf(stderr, "well is");
+	draw_path(n-2);
+	plot_orbit(marked_orbit, marked_point, orbit_length);
+
+	ps_close(); 
+	abort(); */
 
 	//sort finite_orbit from left to right  after normalization and stereo projection through 0,0,1
 	qsort(marked_orbit, orbit_length, sizeof(point), compare);
@@ -194,12 +211,6 @@ int main(int argc, char *argv[]) {
 	
 	fprintf(stderr, "Finite orbit stored\n");
 	
-
-	//index of path to be plotted
-	//int example = 1;
-
-
-
 	int m = 1;
 	for(int i = 0; i < orbit_length-1; i++){ 
 		// connect_path(x,y,k) connects x and y via a path p and stores f^k(p) in ps[].
@@ -219,8 +230,6 @@ int main(int argc, char *argv[]) {
 		//determines over/under arrays from ps[] data
 		determine_arrays(x_vals, y_vals, array_pos[i], array_height[i], &m, marked_orbit, &path_lengths[i]);		
 	}
-
-	abort();
 	
 	fprintf(stderr, "Done determining arrays\n");
 	
@@ -285,11 +294,11 @@ int main(int argc, char *argv[]) {
 
 
 void usage() {
-	fprintf(stderr,"Usage:  stable [options]\n");
+	fprintf(stderr,"Usage:  paths [options]\n");
 	fprintf(stderr,"  -b          draw only bottom\n");
 	fprintf(stderr,"  -c [x y]    window center\n");
 	fprintf(stderr,"  -e [eps]    accuracy\n");
-	fprintf(stderr,"  -l [length] length of stable manifold drawn\n");
+	fprintf(stderr,"  -l [length] maximum length of a path\n");
 	fprintf(stderr,"  -p [a b]    K3 parameters\n");
 	fprintf(stderr,"  -q          quiet\n");
 	fprintf(stderr,"  -r [r]      window radius\n");

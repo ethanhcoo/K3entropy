@@ -56,12 +56,14 @@ int main(int argc, char *argv[]) {
     //Looking for delta pseudo-orbit
     mpfr_t delta;
     mpfr_inits(delta, NULL);
-    mpfr_set_str(delta, "1e-29", 10, MPFR_RNDZ); 
+    mpfr_set_str(delta, "1e-29", 10, MPFR_RNDZ); //set delta here
 
     //Define pseudo-orbit
-    mpfr_t a[10];
-    mpfr_t b[10];
-    for (int i = 0; i < 10; ++i) {
+    //specify length of pseudo_orbit
+    int porbit_length = 10;
+    mpfr_t a[porbit_length];
+    mpfr_t b[porbit_length];
+    for (int i = 0; i < porbit_length; ++i) {
         mpfr_init(a[i]);
         mpfr_init(b[i]);
     }
@@ -88,20 +90,21 @@ int main(int argc, char *argv[]) {
     mpfr_set_str(b[8], "-1.111402054756051352317454938205", 10, MPFR_RNDZ);
     mpfr_set_str(b[9], "0.439586738044637984442175311821", 10, MPFR_RNDZ);
 
+    
 
     //Check for delta pseudo-orbit
     mpfr_t a_temp, b_temp, temp;
     mpfr_inits(a_temp, b_temp, temp, NULL);
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < porbit_length; i++) {
         mpfr_set (a_temp, a[i], MPFR_RNDZ);
         mpfr_set (b_temp, b[i], MPFR_RNDZ);
-        f_c(a_temp, b_temp, charts[i], charts[(i + 1) % 10]);
-        dist_2plane(temp, a_temp, b_temp, a[(i + 1) % 10], b[(i + 1) % 10]);
+        f_c(a_temp, b_temp, charts[i], charts[(i + 1) % porbit_length]);
+        dist_2plane(temp, a_temp, b_temp, a[(i + 1) % porbit_length], b[(i + 1) % porbit_length]);
         if (mpfr_cmp(temp, delta) > 0) {
             fprintf(stderr, "failure \n");
             break;
         } 
-        if(i == 9){
+        if(i == porbit_length-1){
             fprintf(stderr, "successful delta pseudo-orbit \n");
         }
     }

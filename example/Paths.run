@@ -1,13 +1,13 @@
-../bin/paths -r 2 -e .0002 -p 10 2 -l 3 -w 0 | ps2pdf - > paths.pdf 
+../bin/paths -r 2 -e .0002 -p 10 2 -u -w 0 | ps2pdf - > paths.pdf 
 open paths.pdf &
-../bin/paths -r 2 -e .0002 -p 10 2 -l 3 -v 0 -w 1 | ps2pdf - > paths0.pdf 
+../bin/paths -r 2 -e .0002 -p 10 2 -u -v 0 -w 1 | ps2pdf - > paths0.pdf 
 open paths0.pdf &
-../bin/paths -r 2 -e .0002 -p 10 2 -l 3 -v 1 -w 1 | ps2pdf - > paths1.pdf 
-../bin/paths -r 2 -e .0002 -p 10 2 -l 3 -v 2 -w 1 | ps2pdf - > paths2.pdf 
-../bin/paths -r 2 -e .0002 -p 10 2 -l 3 -v 3 -w 1 | ps2pdf - > paths3.pdf 
-../bin/paths -r 2 -e .0002 -p 10 2 -l 3 -v 4 -w 1 | ps2pdf - > paths4.pdf 
-../bin/paths -r 2 -e .0002 -p 10 2 -l 3 -v 5 -w 1 | ps2pdf - > paths5.pdf 
-../bin/paths -r 2 -e .0002 -p 10 2 -l 3 -v 6 -w 1 | ps2pdf - > paths6.pdf 
-../bin/paths -r 2 -e .0002 -p 10 2 -l 3 -v 7 -w 1 | ps2pdf - > paths7.pdf 
-../bin/paths -r 2 -e .0002 -p 10 2 -l 3 -v 8 -w 1 | ps2pdf - > paths8.pdf 
+../bin/paths -r 2 -e .0002 -p 10 2 -u -v 1 -w 1 | ps2pdf - > paths1.pdf 
+../bin/paths -r 2 -e .0002 -p 10 2 -u -v 2 -w 1 | ps2pdf - > paths2.pdf 
+../bin/paths -r 2 -e .0002 -p 10 2 -u -v 3 -w 1 | ps2pdf - > paths3.pdf 
+../bin/paths -r 2 -e .0002 -p 10 2 -u -v 4 -w 1 | ps2pdf - > paths4.pdf 
+../bin/paths -r 2 -e .0002 -p 10 2 -u -v 5 -w 1 | ps2pdf - > paths5.pdf 
+../bin/paths -r 2 -e .0002 -p 10 2 -u -v 6 -w 1 | ps2pdf - > paths6.pdf 
+../bin/paths -r 2 -e .0002 -p 10 2 -u -v 7 -w 1 | ps2pdf - > paths7.pdf 
+../bin/paths -r 2 -e .0002 -p 10 2 -u -v 8 -w 1 | ps2pdf - > paths8.pdf 
 

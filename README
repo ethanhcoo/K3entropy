@@ -1,5 +1,5 @@
 Some added Functionality to Curt McMullen's 'ORBITS OF AUTOMORPHISMS OF K3 SURFACES, Version 3.2 3/2006'
-Most of this ReadMe is a regurgitation of his ReadMe.
+Most of this ReadMe is a repurposed version of his ReadMe.
 
 QUICKSTART.
 Starting in example or src folders.
@@ -11,7 +11,8 @@ THEORY.  A K3 surface S in R^3 is specified by the equation
 
 (1+x^2)(1+y^2)(1+z^2) + Axyz = B .
 
-In many files, we set $A = 10$, $B = 2$.
+In many files, we set $A = 10$, $B = 2$. 
+	warning: periodicExact, derivativesExact, and derivatives have $A = 10$, $B = 2$ hard-coded into some function
 
 Each line parallel to the x, y or z axis meets S in 2
 points, so we obtain 3 involutions by "sheet interchange".
@@ -21,54 +22,81 @@ Set f = Iz Iy Ix;
 
 PROGRAMS.  This directory contains 5 programs:
 
-	periodicExact 
-		- Verifies a particular delta-pseudo orbit using the MPHR library
-	derivativesExact 
-		- Gives derivative information the specific pseudoOrbit above using MPHR library.
-	paths  
-		- Input: a periodic point and its period 
-		- Output: image path data (see paths for a description)
-	mclass	
-		- Input: image path data
-		- Output: Mapping class of f, up to reflection, in terms of dehn half-twists
-	Periodic 
-		- Experimentation only; useful for finding recurrent orbits
-	Derivatives 
-		- Experimentation only; gives derivative information along an orbit without using MPHR library
+(1) periodicExact 
+		- Verifies wether a particular orbit is a delta-pseudo-orbit for fixed delta, using the MPHR library
+	Inputs: All inputs to periodicExact happen within periodicExact.c
+		- Specify a_i, b_i (see Arxiv preprint for notation) where 0\leq i < porbit_length
+		- Specify delta
+	Outputs: 
+		- Returns 'success' if for all i, d(\phi_i^c(a_i, b_i), (a_{i+1 (mod porbit_length)}, b_{i+1 (mod porbit_length)})) < delta
+		- Returns 'failure' otherwise
+	Note: Order of operations in function definitions for [alpha], [beta], [p_{\pm}], [f], [f_i^c] agree with order used in the Appendix of Arxiv preprint to produce error estimates.
 
+(2) derivativesExact 
+		- Gives derivative information the specific pseudorbit above using MPHR library (see Tables 2 and 3 of Arxiv preprint)
+	Inputs: All inputs to derivativesExact happen within derivativesExact.c
+		- Specify a_i,b_i
+	Outputs:
+		- Prints derivatives to command line (stderr)
+	
+(3) paths
+		- Used to generate path data
+	Inputs in paths.c:
+		- the x,y,z coordinates of a pseudo-periodic point and its period 
+	Inputs in command line (edit in paths.run):
+		-b	Draw only bottom of surface.  By default the surface is transparent.
+		-c [x y] -r [r]
+			Set window for image by giving center and "radius".
+			Default is center (0,0), radius 1.2.
+		-e [eps]
+			Set the accurancy of the paths plot. 
+			The path is drawn as a series of line segments each of length about eps.
+		-p [A B]
+			Change the parameters for the surface S.
+		-q	Quiet.
+		-t	Draw only top of surface
+		-w [i]
+			Takes ith iteration under f of each path p_k, i.e. f^i(p_k)
+		-v [m] 
+			Plots only f^i(p_m), the image of the mth path. If this is missing, all paths are plotted.
+	Outputs
+		- path data for $f^i(p_k)$, where $i$ is fixed and $k$ varies over $0\leq k < orbit_length -1
+		- output is printed to the command line
 
+(4) mclass	
+		- used for writing the mapping class of f^2 as a product of dehn half-twists
+	Input: all inputs happen in mclass.c
+		- Image path data, copied directly from command-line output of paths.c
+	Output: Mapping class of g^{-1}, \overline{g}, and f^2 in terms of dehn half-twists (see Arxiv preprint for notation)
 
-STABLE INPUT.  All input to stable is via command-line arguments.
+(5) Periodic (No MPHR)
+		- Experimentation only
+		- Useful for finding recurrent orbits
 
--b	Draw only bottom of surface.  By default the surface is
-	transparent.
+(6) Derivatives (No MPHR)
+		- Experimentation only
+		- Outputs derivative information along an orbit without using MPHR library
 
--c [x y] -r [r]
-	Set window for image by giving center and "radius".
-	Default is center (0,0), radius 1.2.
+(7) A jupyter notebook file, for running Flipper inside SageMath. 
+		-Inputs the output of path.c into flipper to find the dilatation of [f^2]
 
--e [eps]
-	Set the accurancy of the stable manifold plot. 
-	The manifold is drawn as a series of line segments each
-	of length about eps.
+See .c files for comments describing specific functions
 
--l [L]
-	Continue extending the stable manifold until the
-	path joining p to f(p) has length > L.
+EXAMPLES.
 
--p [A B]
-	Change the parameters for the surface S.
+All files can be run using the command-line input from QUICKSTART.
 
--q	Quiet.
+An example of a paths.run is:
 
--s	Spin surface (draw image under (xyz) -> (yzx))
+	../bin/paths -r 2 -e .0002 -p 10 2 -l 3 -v 0 -w 1 | ps2pdf - > paths0.pdf 
+	open paths0.pdf &
 
--t	Draw only top of surface
-
-EXAMPLES.  See the example/ directory for usage.
 
 TROUBLESHOOTING
 
-IF: 'path length exceeded N'
-THEN: increase eps, increase MaxPathlength
+PATHS
+	IF: 'path length exceeded N'
+	THEN: increase eps, increase MaxPathlength
 
+	IF: 'trouble assigning start/end point'
+	THEN: input point is not sufficiently pseudo-periodic

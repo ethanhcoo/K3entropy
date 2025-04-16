@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-
-
 //Initialize arrays to path position data; used in determine_arrays
 int pos_array[PSMAX]; 
 int above_array[PSMAX];
