@@ -1,9 +1,0 @@
-
-#
-# Quick test of stable manifold plotting
-#
-./stable -r 2.3 -e .02 -p 10 2 -l 100 > Stable.txt
-open Stable.txt &
-
-./stable -c 0.89460 0.00480 -r .003 -e .02 -p 10 2 -l 100 | ps2pdf - > Stable.pdf
-open Stable.pdf &

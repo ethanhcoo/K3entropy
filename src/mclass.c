@@ -50,6 +50,7 @@ void expand_twist_data(int *arr, int *size, int k);
 //translates twist data on contracted system to twist data on full system
 
 int main(int argc, char *argv[]) {
+
 	//copied output from paths.c
 	int path_lengths[orbit_length-1] = {13, 3, 8, 12, 11, 11, 2, 7, 7};
 	int array_pos[orbit_length-1][10000] = {
@@ -93,9 +94,11 @@ int main(int argc, char *argv[]) {
 			array_height_testing[i][j] = array_height[i][j];
 		}
 	}
+
 	//Creates arrays to record twists and keep track of its length.
-	char *twists_word[10000]; //twists as characters
-	int twists[10000]; //twist with integer coding, meaning i = s_i; -i = S_{i-1}
+	char *twists_word1[10000]; //twists as characters
+	char *twists_word2[10000]; //twists as characters
+	int twists[10000]; //twists with integer coding, meaning i = s_i; -i = S_{i-1}
 	int twists_length = 0; //length of twist array
 
 
@@ -276,20 +279,37 @@ int main(int argc, char *argv[]) {
 
 	//translate final twist array into s_i's. 
 	for(int i = 0; i < twists_length; i++){
-		twists_word[i] = malloc(5); // Allocate memory for "S_i" (including null terminator)
+		twists_word1[i] = malloc(5); // Allocate memory for "S_i" 
+		twists_word2[i] = malloc(5);
 		if(twists[i]>=0){
-			sprintf(twists_word[i], "s_%d", twists[i]);
+			sprintf(twists_word1[i], "s_%d", twists[i]);
+			sprintf(twists_word2[i], "S_%d", twists[i]);
 		}
 		if(twists[i]<0){
-			sprintf(twists_word[i], "S_%d", -twists[i]-1);
+			sprintf(twists_word1[i], "S_%d", -twists[i]-1);
+			sprintf(twists_word2[i], "s_%d", -twists[i]-1);
 		}
 	}
 
-	//print g^{-1}
-	fprintf(stderr, "final twists length is %d\n", twists_length);
+	//fprintf(stderr, "length of g is %d\n", twists_length);
 
+	//print g^{-1}, \hat g, and f^2
+	fprintf(stderr, "\n g^{-1} = ");
 	for (int j = 0; j <  twists_length; j++) {
-        fprintf(stderr, "%s.", twists_word[j]);
+        fprintf(stderr, "%s.", twists_word1[j]);
+    }
+
+	fprintf(stderr, "\n \n\\hat g = ");
+	for (int j = 0; j <  twists_length; j++) {
+        fprintf(stderr, "%s.", twists_word2[j]);
+    }
+
+	fprintf(stderr, "\n \nf^2 = g^{-1}\\hat g");
+	for (int j = 0; j <  twists_length; j++) {
+        fprintf(stderr, "%s.", twists_word1[j]);
+    }
+	for (int j = 0; j <  twists_length; j++) {
+        fprintf(stderr, "%s.", twists_word2[j]);
     }
 
 	exit(0);
