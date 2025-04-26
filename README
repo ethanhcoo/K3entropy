@@ -20,10 +20,10 @@ These maps preserves a natural volume element on S.
 
 Set f = Iz Iy Ix;
 
-PROGRAMS.  This directory contains 5 programs:
+PROGRAMS.  This directory contains 7 programs:
 
-(1) periodicExact 
-		- Verifies wether a particular orbit is a delta-pseudo-orbit for fixed delta, using the MPHR library
+(1) periodicExact.c 
+		- Verifies whether a particular orbit is a delta-pseudo-orbit for fixed delta, using the GNU MPFR library
 	Inputs: All inputs to periodicExact happen within periodicExact.c
 		- Specify a_i, b_i (see Arxiv preprint for notation) where 0\leq i < porbit_length
 		- Specify delta
@@ -32,14 +32,14 @@ PROGRAMS.  This directory contains 5 programs:
 		- Returns 'failure' otherwise
 	Note: Order of operations in function definitions for [alpha], [beta], [p_{\pm}], [f], [f_i^c] agree with order used in the Appendix of Arxiv preprint to produce error estimates.
 
-(2) derivativesExact 
-		- Gives derivative information the specific pseudorbit above using MPHR library (see Tables 2 and 3 of Arxiv preprint)
+(2) derivativesExact.c
+		- Gives derivative information the specific pseudorbit above using GNU MPFR library (see Tables 2 and 3 of Arxiv preprint)
 	Inputs: All inputs to derivativesExact happen within derivativesExact.c
 		- Specify a_i,b_i
 	Outputs:
 		- Prints derivatives to command line (stderr)
 	
-(3) paths
+(3) paths.c
 		- Used to generate path data
 	Inputs in paths.c:
 		- the x,y,z coordinates of a pseudo-periodic point and its period 
@@ -63,22 +63,23 @@ PROGRAMS.  This directory contains 5 programs:
 		- path data for $f^i(p_k)$, where $i$ is fixed and $k$ varies over $0\leq k < orbit_length -1
 		- output is printed to the command line
 
-(4) mclass	
+(4) mclass.c
 		- used for writing the mapping class of f^2 as a product of dehn half-twists
 	Input: all inputs happen in mclass.c
 		- Image path data, copied directly from command-line output of paths.c
 	Output: Mapping class of g^{-1}, \overline{g}, and f^2 in terms of dehn half-twists (see Arxiv preprint for notation)
 
-(5) Periodic (No MPHR)
-		- Experimentation only
+(5) Periodic.c
+		- Experimentation only (No MPFR)
 		- Useful for finding recurrent orbits
 
-(6) Derivatives (No MPHR)
-		- Experimentation only
-		- Outputs derivative information along an orbit without using MPHR library
+(6) Derivatives.c (No MPFR)
+		- Experimentation only (No MPFR)
+		- Outputs derivative information along an orbit without using GNU MPFR library
 
-(7) A jupyter notebook file, for running Flipper inside SageMath. 
-		-Inputs the output of path.c into flipper to find the dilatation of [f^2]
+(7) FlipperDilation.ipynb
+		- A jupyter notebook file, for running Flipper inside SageMath. 
+		- Inputs the output of path.c into flipper to find the dilatation of [f^2]
 
 See .c files for comments describing specific functions
 
