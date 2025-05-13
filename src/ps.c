@@ -9,7 +9,7 @@
 #define PAGEY 720       /* Offset of lower left corner: 720 default */
 #define CORNX 36
 #define CORNY 36
-#define LINEWIDTH 1 //.3	 /* Line width in device units */
+#define LINEWIDTH 1.3 //.3	 /* Line width in device units */
 #define BORDER 0.10     /* Default border percentage */
 
 //defaults
@@ -154,7 +154,7 @@ void ps_dot(point p, int unravel)
 
 	if(unravel){
 		p = normalize(stereo_proj(rescale(p)));
-		printf("%.5lf %.5lf .01 0 360 d\n", //.015 controls dot size
+		printf("%.5lf %.5lf .01 0 360 d\n", // third value controls dot size
 		p.x,p.y);
 		return;
 	} else{
@@ -165,11 +165,11 @@ void ps_dot(point p, int unravel)
 	//
 	}
 	if(inside(p) && top(p)){
-		printf("%.5lf %.5lf .02 0 360 d\n", 
+		printf("%.5lf %.5lf .03 0 360 d\n", 
 		p.x,p.y);
 	}
 	if(inside(p) && !top(p)){
-		printf("%.5lf %.5lf .02 0 360 p\n", 
+		printf("%.5lf %.5lf .03 0 360 p\n", 
 		p.x,p.y);
 	}
 }

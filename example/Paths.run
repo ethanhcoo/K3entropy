@@ -11,3 +11,6 @@ open paths0.pdf &
 ../bin/paths -r 2 -e .0002 -p 10 2 -u -v 7 -w 1 | ps2pdf - > paths7.pdf 
 ../bin/paths -r 2 -e .0002 -p 10 2 -u -v 8 -w 1 | ps2pdf - > paths8.pdf 
 
+# If plotting curve C or its images, uncomment:
+# ../bin/paths -r 2.35 -e .0002 -p 10 2 -w 0 | ps2pdf - > Figure_zx_new.pdf 
+# open Figure_zx_new.pdf &

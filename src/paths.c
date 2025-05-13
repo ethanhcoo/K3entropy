@@ -180,11 +180,11 @@ marked_point.z = 1.726895448754858426328854724474;
 
 	// Uncomment the following code to produce figure showing intersection of {z = -w} and f^5({z = -w})
 	/*
-	int well = diagonal_path_near(marked_orbit[0], .001);
+	int well = diagonal_path_near(marked_orbit[0], .003);
 	n = well;
 	draw_path(n-2);
 
-	well = diagonal_path_near(marked_orbit[5], 5e-6);
+	well = diagonal_path_near(marked_orbit[5], 1e-5);
 	n = well - 2;
 
 	for (int i = 0; i <5; ++i){

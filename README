@@ -2,7 +2,7 @@ Some added functionality to Curt McMullen's 'ORBITS OF AUTOMORPHISMS OF K3 SURFA
 Most of this ReadMe is a repurposed version of his ReadMe.
 
 QUICKSTART.
-Starting in example or src folders.
+Starting in 'example' or 'src' folders.
 To execute './Mclass.run' type
 cd ..; cd src; make; cd ..; cd example; ./Mclass.run
 Same for other .run files
