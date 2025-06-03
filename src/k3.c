@@ -193,7 +193,8 @@ point newton(p)
 	exit(1);
 }
 
-/* Follow gradient from p to point on surface */ //THIS THING WAS CAUSING JAGGED EDGES!!!!
+// Follow radial segments from unit sphere to point on surface 
+// WARNING: this has caused jagged edges in the past
 point newton_plane(p)
 	point p;
 {
@@ -203,20 +204,11 @@ point newton_plane(p)
 
 	for(i=0; i<100000; i++) // was 1000
 	{	s = surf(p);
-		if(s < .00001 && (-s) < .00001) return(p); //.001 was working. 
+		if(s < .00001 && (-s) < .00001) return(p); 
 		v = rescale(p);
-		//v = grad(p);
-		//project v onto p
-		//double thing  = rescale(p).x * v.x + rescale(p).y * v.y + rescale(p).z *v.z;
-		//v.x = thing * rescale(p).x;
-		//v.y = thing * rescale(p).y;
-		//v.z = thing * rescale(p).z;
-
-		p.x = p.x - s*v.x*.01; //.01 was working
+		p.x = p.x - s*v.x*.01; 
 		p.y = p.y - s*v.y*.01;
 		p.z = p.z - s*v.z*.01;
-
-		//fprintf(stderr, "newtown progress is %f\n", s);
 	}
 	fprintf(stderr,"Error:  Newton iteration failed after 1000 steps\n");
 	exit(1);
@@ -235,7 +227,7 @@ void subdivide(point p,point q,point ps[],int n)
 	}
 }
 
-/* Subdivide a segment into n segments USING TRANSFORMATION TO PLANE*/ /*arrays in C are passed to function by reference*/
+// Subdivide a segment into n segments USING TRANSFORMATION TO PLANE
 void subdivide_plane(point p,point q,point ps[],int n)
 {
 	int i;
@@ -352,7 +344,7 @@ void patherr()
 		PSMAX);
 }
 
-/*Ethan added this*/
+// rescales to unit sphere
 point rescale(point p){
 	double n = sqrt(norm(p));
 	p.x = p.x/n;
@@ -361,8 +353,8 @@ point rescale(point p){
 	return p;
 }
 
-/*Ethan added this*/
-point stereo_proj(point p){ /*stereogrphic projection from 0,0,1. N scales to dic*/
+//stereogrphic projection from (0,0,1)
+point stereo_proj(point p){ 
 	point q;
 	q.x = p.x/(1-p.z);
 	q.y = p.y/(1-p.z);
@@ -370,26 +362,29 @@ point stereo_proj(point p){ /*stereogrphic projection from 0,0,1. N scales to di
 	return q;
 }
 
+
+//inverse stereographic projection
 point inv_proj(point p){
 	point q;
-	q.x = 2*p.x/(1+p.x*p.x + p.y*p.y);
-	q.y = 2*p.y/(1+p.x*p.x + p.y*p.y);
-	q.z = (-1 + p.x*p.x + p.y*p.y)/(1+p.x*p.x + p.y*p.y);
+	q.x = 2*p.x/(1+(p.x*p.x) + (p.y*p.y));
+	q.y = 2*p.y/(1+(p.x*p.x) + (p.y*p.y));
+	q.z = (-1 + (p.x*p.x) + (p.y*p.y))/(1+(p.x*p.x) + (p.y*p.y));
 	return q;
 }
 
+
+//from surface to x-y plane
 point transform(point p){
 	return stereo_proj(rescale(p));
 }
-/*Ethan added this*/
 
+//from x-y plane to surface
 point inv_transform(point p){
 	return newton_plane(inv_proj(p));
 }
 
 
-//derivative stuff
-
+//derivatives
 void Dix(point p, double **matrix) {
 	matrix[0][0] = -1;
     matrix[0][1] = -a*p.z*(1-p.y*p.y)/((1 + p.z*p.z)*(1 + p.y*p.y)*(1 + p.y*p.y));
@@ -435,6 +430,7 @@ point vtan(point p) {
 }
 
 
+//matrix multiplication
 void multiplyMatrices(double **firstMatrix, double **secondMatrix, double **result, int ROWS1, int COLS1, int ROWS2, int COLS2) {
     for (int i = 0; i < ROWS1; ++i) {
         for (int j = 0; j < COLS2; ++j) {
@@ -445,6 +441,7 @@ void multiplyMatrices(double **firstMatrix, double **secondMatrix, double **resu
         }
     }
 }
+
 void multiplyMatricesAux(double **firstMatrix, double **secondMatrix, double **result, int ROWS1, int COLS1, int ROWS2, int COLS2) {
 	for (int i = 0; i < ROWS1; ++i) {
         for (int j = 0; j < COLS2; ++j) {
@@ -479,7 +476,8 @@ void printMatrix(double **matrix, int ROWS1, int COLS1) {
 		}
     }
 }
-/* square of norm of a matrix */
+
+//square of L2-norm of a matrix 
 double mat_norm(double **matrix, int ROWS1, int COLS1)
 {
 	double x = 0;

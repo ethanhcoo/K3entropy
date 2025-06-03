@@ -9,28 +9,22 @@
 #define PAGEY 720       /* Offset of lower left corner: 720 default */
 #define CORNX 36
 #define CORNY 36
-#define LINEWIDTH 1.3 //.3	 /* Line width in device units */
+#define LINEWIDTH .3 //1.3	 /* Line width in device units */
 #define BORDER 0.10     /* Default border percentage */
 
 //defaults
 static double linewidth=LINEWIDTH;
 double size, xmax, xmin, ymax, ymin;
 
-//homeomorphism from half-plane onto unit disk
+//homeomorphism from plane onto unit disk
 point normalize(point p){
-	double temp = sqrt(norm(p));
 	p.x = p.x/(1+fabs(p.x));
 	p.y = p.y/(1+fabs(p.y));
 	p.z = p.z/(1+fabs(p.z));
 
-	temp = sqrt(norm(p));
-	p.x = p.x*pow(temp, 0);
-	p.y = p.y*pow(temp, 0);
-	p.z = p.z*pow(temp, 0);
-
 	p.x = p.x* 2;
 	p.y = p.y*.5;
-	p.z = p.z*1;
+	p.z = p.z* 1;
 
 	return p;
 }
@@ -114,29 +108,44 @@ int inside(p)
 }
 
 //plot line between p and q
-void ps_line(point p,point q, int unravel)
+void ps_line(point p,point q, int unravel, int sphere)
 {
-	
 	if(unravel){
 		p = normalize(stereo_proj(rescale(p)));
 		q = normalize(stereo_proj(rescale(q)));
+
 		if(inside(p) || inside(q)){
 			printf("%.5lf %.5lf %.5lf %.5lf l\n",
 			p.x,p.y,q.x,q.y);
 		}
 		return;
-	} else{
-		//use to plot z-x axis
+	} 
+
+	if(sphere){
 		p = rotate(p);
 		p = rotate(p);
 		q = rotate(q);
 		q = rotate(q);
+
+		p = rescale(p); 
+		q = rescale(q); 
+		if(p.z > 0){
+			printf("%.5lf %.5lf %.5lf %.5lf l\n",
+			p.x,p.y,q.x,q.y);
+		}
+		if(p.z < 0){
+			printf("%.5lf %.5lf %.5lf %.5lf o\n",
+			p.x,p.y,q.x,q.y);
+		}
+		return;
 	}
 
+	p = rotate(p);
+	p = rotate(p);
+	q = rotate(q);
+	q = rotate(q);
 	if(top(p)){
 		if(inside(p) || inside(q)){
-			//p = rescale(p); //Ethan added for sphere
-			//q = rescale(q);
 			printf("%.5lf %.5lf %.5lf %.5lf l\n",
 			p.x,p.y,q.x,q.y);
 		}
@@ -149,7 +158,7 @@ void ps_line(point p,point q, int unravel)
 }
 
 
-void ps_dot(point p, int unravel)
+void ps_dot(point p, int unravel, int sphere)
 {
 
 	if(unravel){
@@ -157,13 +166,26 @@ void ps_dot(point p, int unravel)
 		printf("%.5lf %.5lf .01 0 360 d\n", // third value controls dot size
 		p.x,p.y);
 		return;
-	} else{
-		//p = rescale(p); //Ethan added for sphere
-		//use to plot z-x axis
+	} 
+
+	if(sphere){
 		p = rotate(p);
 		p = rotate(p);
-	//
+		p = rescale(p); 
+		if(p.z > 0){ 
+			printf("%.5lf %.5lf .01 0 360 d\n", 
+			p.x,p.y);
+		}
+		if(p.z < 0){
+			printf("%.5lf %.5lf .01 0 360 p\n", 
+			p.x,p.y);
+		}
+		return;
 	}
+
+	p = rotate(p);
+	p = rotate(p);
+		
 	if(inside(p) && top(p)){
 		printf("%.5lf %.5lf .03 0 360 d\n", 
 		p.x,p.y);
@@ -171,18 +193,23 @@ void ps_dot(point p, int unravel)
 	if(inside(p) && !top(p)){
 		printf("%.5lf %.5lf .03 0 360 p\n", 
 		p.x,p.y);
-	}
+	}	
 }
 
-void ps_dot_transparent(point p)/*Ethan added this*/
+void ps_dot_transparent(point p, int sphere)/*Ethan added this*/
 {
 	//use to plot z-x axis
 	p = rotate(p);
 	p = rotate(p);
+	if(sphere){
+		p = rescale(p); 
+		return; //don't print sphere!
+	} 
 
-	if(inside(p))
+	if(inside(p)){
 		printf("%.5lf %.5lf .003 0 360 b\n", //originally .003
 		p.x,p.y);
+	}
 }
 
 void ps_close()

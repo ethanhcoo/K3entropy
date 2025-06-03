@@ -286,6 +286,7 @@ int main(int argc, char *argv[]) {
 
 }
 
+// alpha = (xy)/((1+x^2)(1+y^2))
 void alphaExact(mpfr_t result, mpfr_t x, mpfr_t y) {
     mpfr_t temp1, temp2, temp3;
 
@@ -310,6 +311,8 @@ void alphaExact(mpfr_t result, mpfr_t x, mpfr_t y) {
 
     mpfr_clears(temp1, temp2, temp3, NULL);
 }
+
+// beta = 1/((1+x^2)(1+y^2))
 
 void betaExact(mpfr_t result, mpfr_t x, mpfr_t y) {
     mpfr_t temp2, temp3;
@@ -356,6 +359,7 @@ void iy_exact(mpfr_point *p) {
     mpfr_set(p->y, q.z, MPFR_RNDZ);
 }
 
+//iz (x,y,z) = (x,y, -z - (10 alpha (x,y)))
 void iz_exact(mpfr_point *p) {
 	mpfr_t temp1;
     mpfr_inits(temp1, NULL);
@@ -370,14 +374,15 @@ void iz_exact(mpfr_point *p) {
     mpfr_clears(temp1, NULL);
 }
 
+// D(x,y) = 100((x^2)(y^2))) + 8((1+x^2)(1+y^2)) + 4((1+x^2)^2 (1+y^2)^2)
 void DExact(mpfr_t result, mpfr_t x, mpfr_t y) {
     mpfr_t temp1, temp2, temp3, temp4;
     mpfr_inits(temp1, temp2, temp3, temp4, NULL);
 
     // temp1 = 100 * x * x * y * y
     mpfr_mul(temp1, x, x, MPFR_RNDZ);
-    mpfr_mul(temp1, temp1, y, MPFR_RNDZ);
-    mpfr_mul(temp1, temp1, y, MPFR_RNDZ);
+    mpfr_mul(temp2, y, y, MPFR_RNDZ);
+    mpfr_mul(temp1, temp1, temp2, MPFR_RNDZ);
     mpfr_mul_ui(temp1, temp1, 100, MPFR_RNDZ);
 
     // temp2 = 8 * (1 + x * x) * (1 + y * y)
@@ -388,13 +393,15 @@ void DExact(mpfr_t result, mpfr_t x, mpfr_t y) {
     mpfr_mul(temp2, temp2, temp3, MPFR_RNDZ);
     mpfr_mul_ui(temp2, temp2, 8, MPFR_RNDZ);
 
-    // temp3 = 4 * (1 + x * x) * (1 + x * x) * (1 + y * y) * (1 + y * y)
+    // temp3 = 4 * ((1 + x * x) * (1 + x * x)) * ((1 + y * y) * (1 + y * y))
     mpfr_mul(temp3, x, x, MPFR_RNDZ);
     mpfr_add_ui(temp3, temp3, 1, MPFR_RNDZ);
     mpfr_mul(temp3, temp3, temp3, MPFR_RNDZ);
+
     mpfr_mul(temp4, y, y, MPFR_RNDZ);
     mpfr_add_ui(temp4, temp4, 1, MPFR_RNDZ);
     mpfr_mul(temp4, temp4, temp4, MPFR_RNDZ);
+
     mpfr_mul(temp3, temp3, temp4, MPFR_RNDZ);
     mpfr_mul_ui(temp3, temp3, 4, MPFR_RNDZ);
 
@@ -405,7 +412,7 @@ void DExact(mpfr_t result, mpfr_t x, mpfr_t y) {
     mpfr_clears(temp1, temp2, temp3, temp4, NULL);
 }
 
-
+//p(x,y) = -5 alpha(x,y) + .5 (\beta(x,y) \sqrt(D(x,y)))
 void pPlusExact(mpfr_t result,  mpfr_t x,  mpfr_t y) {
     mpfr_t temp1, temp2, temp3;
 
@@ -673,7 +680,7 @@ void DizExact(mpfr_point p, mpfr_t **matrix) {
     mpfr_clears(temp1, temp2, temp3, NULL);
 }
 
-
+//Dx(x,y) = 200 * x * y * y + 16 * x * (1 + y * y) - 16 * x * (1 + x * x) * (1 + y * y) * (1 + y * y)
 void DxExact(mpfr_t result, mpfr_t x, mpfr_t y) {
     mpfr_t temp1, temp2, temp3, temp4;
     mpfr_inits(temp1, temp2, temp3, temp4, NULL);
@@ -705,10 +712,12 @@ void DxExact(mpfr_t result, mpfr_t x, mpfr_t y) {
 
     mpfr_clears(temp1, temp2, temp3, temp4, NULL);
 }
+
 void DyExact(mpfr_t result, mpfr_t x, mpfr_t y) {
     DxExact(result, y, x);
 }
 
+//Dxx(x,y) = 200 * y * y + 16 * (1 + y * y) - 32 * x * x * (1 + y * y) * (1 + y * y) - 16 * (1 + x * x) * (1 + y * y) * (1 + y * y)
 void DxxExact(mpfr_t result, mpfr_t x, mpfr_t y) {
     mpfr_t temp1, temp2, temp3, temp4, temp5;
     mpfr_inits(temp1, temp2, temp3, temp4, temp5, NULL);
@@ -749,6 +758,8 @@ void DxxExact(mpfr_t result, mpfr_t x, mpfr_t y) {
 void DyyExact(mpfr_t result, mpfr_t x, mpfr_t y) {
     DxxExact(result, y, x);
 }
+
+//Dxx(x,y) = 432 * x * y - 64 * x * (1 + x * x) * y * (1 + y * y)
 void DxyExact(mpfr_t result, mpfr_t x, mpfr_t y) {
     mpfr_t temp1, temp2, temp3;
     mpfr_inits(temp1, temp2, temp3, NULL);
@@ -772,6 +783,16 @@ void DxyExact(mpfr_t result, mpfr_t x, mpfr_t y) {
 
     mpfr_clears(temp1, temp2, temp3, NULL);
 }
+
+
+//px(s,t)= num/denom where 
+/* num = (
+    s(-2+23t^2) - s^3(2+27t^2)
+    - 5t(sqrt(1 - t^4 - s^4(1 + t^2)^2 + s^2(23t^2 - 2t^4)))
+    + 5s^2t(sqrt(1 - t^4 - s^4(1 + t^2)^2 + s^2(23t^2 - 2t^4)))
+)*/
+
+// denom = (1+s^2)^2*(1+t^2)*sqrt(1-t^4-s^4*(1+t^2)^2+s^2*(23*t^2-2*t^4))
 
 void pxExact(mpfr_t result, mpfr_t s, mpfr_t t) {
     mpfr_t numerator, denominator, temp1, temp2, temp3, temp4, temp5, temp6, temp7;

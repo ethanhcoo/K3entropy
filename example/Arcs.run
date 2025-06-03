@@ -1,0 +1,21 @@
+
+../bin/arcs -r 3 -e .0002 -p 10 2 -u -v 0  -w 1 | ps2pdf - > arc0.pdf 
+open arc0.pdf &
+../bin/arcs -r 3 -e .0002 -p 10 2 -u -v 1  -w 1 | ps2pdf - > arc1.pdf 
+open arc1.pdf &
+../bin/arcs -r 3 -e .0002 -p 10 2 -u -v 2  -w 1 | ps2pdf - > arc2.pdf 
+open arc2.pdf &
+../bin/arcs -r 3 -e .0002 -p 10 2 -u -v 3  -w 1 | ps2pdf - > arc3.pdf 
+open arc3.pdf &
+../bin/arcs -r 3 -e .0002 -p 10 2 -u -v 4  -w 1 | ps2pdf - > arc4.pdf 
+open arc4.pdf &
+../bin/arcs -r 3 -e .0002 -p 10 2 -u -v 5  -w 1 | ps2pdf - > arc5.pdf 
+open arc5.pdf &
+../bin/arcs -r 3 -e .0002 -p 10 2 -u -v 6  -w 1 | ps2pdf - > arc6.pdf 
+open arc6.pdf &
+../bin/arcs -r 3 -e .0002 -p 10 2 -u -v 7  -w 1 | ps2pdf - > arc7.pdf 
+open arc7.pdf &
+../bin/arcs -r 3 -e .0002 -p 10 2 -u -v 8  -w 1 | ps2pdf - > arc8.pdf 
+open arc8.pdf &
+
+

@@ -112,6 +112,8 @@ int main(int argc, char *argv[]) {
 	exit(0);
 }
 
+
+// alpha = (xy)/((1+x^2)(1+y^2))
 void alphaExact(mpfr_t result, mpfr_t x, mpfr_t y) {
     mpfr_t temp1, temp2, temp3;
 
@@ -136,6 +138,8 @@ void alphaExact(mpfr_t result, mpfr_t x, mpfr_t y) {
 
     mpfr_clears(temp1, temp2, temp3, NULL);
 }
+
+// beta = 1/((1+x^2)(1+y^2))
 
 void betaExact(mpfr_t result, mpfr_t x, mpfr_t y) {
     mpfr_t temp2, temp3;
@@ -182,6 +186,7 @@ void iy_exact(mpfr_point *p) {
     mpfr_set(p->y, q.z, MPFR_RNDZ);
 }
 
+//iz (x,y,z) = (x,y, -z - (10 alpha (x,y)))
 void iz_exact(mpfr_point *p) {
 	mpfr_t temp1;
     mpfr_inits(temp1, NULL);
@@ -196,11 +201,14 @@ void iz_exact(mpfr_point *p) {
     mpfr_clears(temp1, NULL);
 }
 
+
+
 void f_exact(mpfr_point *p) {
 	ix_exact(p);
     iy_exact(p);
     iz_exact(p);
 }
+
 
 void f_c(mpfr_t s,  mpfr_t t, int i, int j) {
 	mpfr_point temp;
@@ -242,14 +250,16 @@ void dist_2plane(mpfr_t result, mpfr_t a1, mpfr_t b1, mpfr_t a2, mpfr_t b2) {
 }
 
 
+
+// D(x,y) = 100((x^2)(y^2))) + 8((1+x^2)(1+y^2)) + 4((1+x^2)^2 (1+y^2)^2)
 void DExact(mpfr_t result, mpfr_t x, mpfr_t y) {
     mpfr_t temp1, temp2, temp3, temp4;
     mpfr_inits(temp1, temp2, temp3, temp4, NULL);
 
     // temp1 = 100 * x * x * y * y
     mpfr_mul(temp1, x, x, MPFR_RNDZ);
-    mpfr_mul(temp1, temp1, y, MPFR_RNDZ);
-    mpfr_mul(temp1, temp1, y, MPFR_RNDZ);
+    mpfr_mul(temp2, y, y, MPFR_RNDZ);
+    mpfr_mul(temp1, temp1, temp2, MPFR_RNDZ);
     mpfr_mul_ui(temp1, temp1, 100, MPFR_RNDZ);
 
     // temp2 = 8 * (1 + x * x) * (1 + y * y)
@@ -260,13 +270,15 @@ void DExact(mpfr_t result, mpfr_t x, mpfr_t y) {
     mpfr_mul(temp2, temp2, temp3, MPFR_RNDZ);
     mpfr_mul_ui(temp2, temp2, 8, MPFR_RNDZ);
 
-    // temp3 = 4 * (1 + x * x) * (1 + x * x) * (1 + y * y) * (1 + y * y)
+    // temp3 = 4 * ((1 + x * x) * (1 + x * x)) * ((1 + y * y) * (1 + y * y))
     mpfr_mul(temp3, x, x, MPFR_RNDZ);
     mpfr_add_ui(temp3, temp3, 1, MPFR_RNDZ);
     mpfr_mul(temp3, temp3, temp3, MPFR_RNDZ);
+
     mpfr_mul(temp4, y, y, MPFR_RNDZ);
     mpfr_add_ui(temp4, temp4, 1, MPFR_RNDZ);
     mpfr_mul(temp4, temp4, temp4, MPFR_RNDZ);
+
     mpfr_mul(temp3, temp3, temp4, MPFR_RNDZ);
     mpfr_mul_ui(temp3, temp3, 4, MPFR_RNDZ);
 
@@ -277,7 +289,7 @@ void DExact(mpfr_t result, mpfr_t x, mpfr_t y) {
     mpfr_clears(temp1, temp2, temp3, temp4, NULL);
 }
 
-
+//p(x,y) = -5 alpha(x,y) + .5 (\beta(x,y) \sqrt(D(x,y)))
 void pPlusExact(mpfr_t result,  mpfr_t x,  mpfr_t y) {
     mpfr_t temp1, temp2, temp3;
 
@@ -320,6 +332,8 @@ void pMinusExact(mpfr_t result,  mpfr_t x,  mpfr_t y) {
 
     mpfr_clears(temp1, temp2, temp3, NULL);
 }
+
+
 
 
 void lift_exact_charts(mpfr_point *p,  mpfr_t a,  mpfr_t b, int i) {

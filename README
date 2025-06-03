@@ -39,34 +39,36 @@ PROGRAMS.  This directory contains 7 programs:
 	Outputs:
 		- Prints derivatives to command line (stderr)
 	
-(3) paths.c
-		- Used to generate path data
-	Inputs in paths.c:
+(3) arcs.c
+		- Used to generate arc data
+	Inputs in arcs.c:
 		- the x,y,z coordinates of a pseudo-periodic point and its period 
-	Inputs in command line (edit in paths.run):
+	Inputs in command line (edit in arcs.run):
 		-b	Draw only bottom of surface.  By default the surface is transparent.
 		-c [x y] -r [r]
 			Set window for image by giving center and "radius".
 			Default is center (0,0), radius 1.2.
 		-e [eps]
-			Set the accurancy of the paths plot. 
-			The path is drawn as a series of line segments each of length about eps.
+			Set the accurancy of the arcs plot. 
+			The arc is drawn as a series of line segments each of length about eps.
 		-p [A B]
 			Change the parameters for the surface S.
 		-q	Quiet.
 		-t	Draw only top of surface
+		-s 	Rescales to unit sphere
+		-u 	Rescales, stereographically projects to plane, and normalized to disk
 		-w [i]
-			Takes ith iteration under f of each path p_k, i.e. f^i(p_k)
+			Takes ith iteration under f of each arc p_k, i.e. f^i(p_k)
 		-v [m] 
-			Plots only f^i(p_m), the image of the mth path. If this is missing, all paths are plotted.
+			Plots only f^i(p_m), the image of the mth arc. If this is missing, all arcs are plotted.
 	Outputs
-		- path data for $f^i(p_k)$, where $i$ is fixed and $k$ varies over $0\leq k < orbit_length -1
+		- arc data for $f^i(p_k)$, where $i$ is fixed and $k$ varies over $0\leq k < orbit_length -1
 		- output is printed to the command line
 
 (4) mclass.c
 		- used for writing the mapping class of f^2 as a product of dehn half-twists
 	Input: all inputs happen in mclass.c
-		- Image path data, copied directly from command-line output of paths.c
+		- Image arc data, copied directly from command-line output of arcs.c
 	Output: Mapping class of g^{-1}, \overline{g}, and f^2 in terms of dehn half-twists (see Arxiv preprint for notation)
 
 (5) Periodic.c
@@ -79,7 +81,7 @@ PROGRAMS.  This directory contains 7 programs:
 
 (7) FlipperDilation.ipynb
 		- A jupyter notebook file, for running Flipper inside SageMath. 
-		- Inputs the output of path.c into flipper to find the dilatation of [f^2]
+		- Inputs the output of arcs.c into flipper to find the dilatation of [f^2]
 
 See .c files for comments describing specific functions
 
@@ -87,15 +89,15 @@ EXAMPLES.
 
 All files can be run using the command-line input from QUICKSTART.
 
-An example of a paths.run is:
+An example of a arcs.run is:
 
-	../bin/paths -r 2 -e .0002 -p 10 2 -l 3 -v 0 -w 1 | ps2pdf - > paths0.pdf 
-	open paths0.pdf &
+	../bin/arcs -r 2 -e .0002 -p 10 2 -l 3 -v 0 -w 1 | ps2pdf - > arcs0.pdf 
+	open arcs0.pdf &
 
 
 TROUBLESHOOTING
 
-PATHS
+ARCS
 	IF: 'path length exceeded N'
 	THEN: increase eps, increase MaxPathlength
 

@@ -12,15 +12,17 @@ void init_color_map(), init_surface(), orbit(), random_orbits(), usage(),
 	scan_set(), ps_colorimage(), printhex(), hlsrgb(), ps_image(),
 	patherr(), suberr();
 
-void ps_line(point p, point q, int unravel), di(point *ps, int n), setsep(double s), draw_path(int n), draw_manifold(), ps_close();
+void ps_line(point p, point q, int unravel, int sphere), di(point *ps, int n), setsep(double s), draw_path(int n), draw_manifold(), ps_close();
 
 /*Ethan's additions start*/
 
 //miscellaneous 
-point grad(point p);
-void pprint(point p); /*prints point*/
-point rescale (point p); /*rescales a point to the unit ball. */
-point stereo_proj(point p); /*projects points on sphere with respect to (-1,0,0)*/
+point grad(point p); //computes gradient 
+void pprint(point p); //prints point
+
+//rescaling functions
+point rescale (point p); //rescales a point to the unit ball. 
+point stereo_proj(point p); //projects points in unit sphere wrt to (0,0,1) to x-y plane
 
 //functions related to recurrence
 bool is_recurrent(point p);
@@ -30,10 +32,9 @@ void search_near(point p, double epsilon, int N);
 //functions related to plotting
 int fpath(point ps[],int np);
 int connect_path(point p, point w, int n);
-void ps_line_color(point p, point q, int unravel); /*colored segment in ps*/
 void plot_orbit(point marked_orbit[], point p, int n); /*plots orbit in stable ps*/
-void ps_dot(point p, int unravel);/*dot in ps*/
-void ps_dot_transparent(point p);
+void ps_dot(point p, int unravel, int sphere);/*dot in ps*/
+void ps_dot_transparent(point p, int sphere);
 void draw_background(point z, int n);
 void subdivide(point p,point q,point ps[],int n);
 void subdivide_plane(point p,point q,point ps[],int n);
