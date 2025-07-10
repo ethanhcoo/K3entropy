@@ -9,19 +9,20 @@
 #define PAGEY 720       /* Offset of lower left corner: 720 default */
 #define CORNX 36
 #define CORNY 36
-#define LINEWIDTH .3 //1.3	 /* Line width in device units */
+#define LINEWIDTH .3	 /* Line width in device units */
 #define BORDER 0.10     /* Default border percentage */
 
 //defaults
 static double linewidth=LINEWIDTH;
 double size, xmax, xmin, ymax, ymin;
 
-//homeomorphism from plane onto unit disk
+//homeomorphism from R^2 onto a rectangle; preserves ordering in each of the x,y,z directions
 point normalize(point p){
 	p.x = p.x/(1+fabs(p.x));
 	p.y = p.y/(1+fabs(p.y));
 	p.z = p.z/(1+fabs(p.z));
 
+	//stretching for clarity; still preserving ordering in x,y,z directions
 	p.x = p.x* 2;
 	p.y = p.y*.5;
 	p.z = p.z* 1;
@@ -111,8 +112,8 @@ int inside(p)
 void ps_line(point p,point q, int unravel, int sphere)
 {
 	if(unravel){
-		p = normalize(stereo_proj(rescale(p)));
-		q = normalize(stereo_proj(rescale(q)));
+		p = normalize(transform(p));
+		q = normalize(transform(q));
 
 		if(inside(p) || inside(q)){
 			printf("%.5lf %.5lf %.5lf %.5lf l\n",
@@ -162,7 +163,7 @@ void ps_dot(point p, int unravel, int sphere)
 {
 
 	if(unravel){
-		p = normalize(stereo_proj(rescale(p)));
+		p = normalize(transform(p));
 		printf("%.5lf %.5lf .01 0 360 d\n", // third value controls dot size
 		p.x,p.y);
 		return;

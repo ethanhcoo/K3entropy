@@ -2,6 +2,13 @@
 	//line width and dot side can be changed in ps.c 
 	//throughout: 'path' = 'arc'
 
+//Functions used from k3.c:
+	// subdivide_plane(), dist(), transform(), stereo_proj(), rescale(), fpath(), unreal()
+
+//Functions used from ps.c:
+	// ps_open(), ps_window(), ps_close(), ps_dot(), ps_dot_transparent(), ps_line()
+
+
 
 #include "k3.h"
 #include <math.h>
@@ -69,7 +76,7 @@ void determine_arrays(double *x_vals, double *y_vals, int *pos, int *height, int
 // b is the length of pos and height -- it must start at 1, and will be increased throughout the program
 
 int compare(const void *a, const void *b);
-// p1 < p2 if p1.x < p2.x after normalization and stereo projection through 0,0,1
+// p1 < p2 if p1.x < p2.x after (1) rescaling to unit sphere and (2) stereo projecting through 0,0,1 
 
 bool simplify_arrays(int *arr1, int *arr2, int *size);
 // if a simplification is possible, performs it and returns true. otherwise, returns false
@@ -184,29 +191,29 @@ marked_point.z = 1.726895448754858426328854724474;
 	plot_orbit(marked_orbit, marked_point, orbit_length);
 
 
-	// Uncomment the following code to produce figure showing intersection of {z = -w} and f^5({z = -w})
-	/*
-	int well = diagonal_path_near(marked_orbit[0], .003);
-	n = well;
-	draw_path(n-2);
+	// Uncomment the following block to produce figure showing intersection of {z = -w} and f^5({z = -w})
+			/*
+			int well = diagonal_path_near(marked_orbit[0], .003);
+			n = well;
+			draw_path(n-2);
 
-	well = diagonal_path_near(marked_orbit[5], 1e-5);
-	n = well - 2;
+			well = diagonal_path_near(marked_orbit[5], 1e-5);
+			n = well - 2;
 
-	for (int i = 0; i <5; ++i){
-		n=fpath(ps, n);
-	}
-	fprintf(stderr, "well is");
-	draw_path(n-2);
-	plot_orbit(marked_orbit, marked_point, orbit_length);
+			for (int i = 0; i <5; ++i){
+				n=fpath(ps, n);
+			}
+			fprintf(stderr, "well is");
+			draw_path(n-2);
+			plot_orbit(marked_orbit, marked_point, orbit_length);
 
-	ps_close(); 
-	abort(); */
+			ps_close(); 
+			abort(); */
 
-	//sort finite_orbit from left to right  after normalization and stereo projection through 0,0,1
+	//sort finite_orbit from left to right  after (1) rescale to unit sphere (2) stereo projection through 0,0,1 
 	qsort(marked_orbit, orbit_length, sizeof(point), compare);
 	
-	//store x,y coordinates of finite orbit after normalization and stereo projection through 0,0,1
+	//store x,y coordinates of finite orbit after (1) rescaling to unit sphere and (2) stereo projecting through 0,0,1 
 	double x_vals[orbit_length];
 	double y_vals[orbit_length];
 
@@ -324,6 +331,7 @@ int connect_path(point z, point w, int k) {
 
 	return n+1; //stuff Curt coded runs on size - 1. this returns size.
 }
+
 
 int diagonal_path(double delta) {
 	int n = 0;
@@ -627,11 +635,12 @@ void determine_position(double *x_vals, double *y_vals, point p){
 
 
 int compare(const void *a, const void *b) {
-    double diff = stereo_proj(rescale(*(point*)a)).x - stereo_proj(rescale(*(point*)b)).x;
+    double diff = transform(*(point*)a).x - transform(*(point*)b).x;
     if (diff < 0) return -1;
     else if (diff > 0) return 1;
     else return 0;
 }
+
 
 bool simplify_arrays(int *arr1, int *arr2, int *size) {
     bool simplified = false;

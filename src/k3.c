@@ -9,20 +9,19 @@
 #include <stdbool.h>
 
 
-static double a=A, b=B, sep=SEP;
+static double a=A, b=B, sep=SEP;                
 
-/* Prints a point (Ethan added)*/
+// Very large array
+point qs[PSMAX];
 
+
+// Prints a point
 void pprint(point p){
 	fprintf(stderr, "(%.10lf, %.10lf, %.10lf)\n", p.x, p.y, p.z);
 }
-                    
+    
 
-/* Very large arrays */
-point qs[PSMAX];
-
-/* Set p.z from {x,y} so p lies on K3 */
-
+// Set p.z from {x,y} so p lies on K3 
 point lift(x,y)
 	double x, y;
 {
@@ -37,7 +36,7 @@ point lift(x,y)
 	return(p);
 }
 
-/* Check if (x,y) lifts to a real point */
+// check if (x,y) lifts to a real point 
 int unreal(x,y)
 	double x,y;
 {
@@ -49,7 +48,17 @@ int unreal(x,y)
 	return(qb*qb - 4*qa*qc < 0);
 }
 
-/* Involutions on K3 */
+
+// Involution of z, fixing x and y 
+// z -> (-axy)/((1+x^2)(1+y^2)) - z 
+double involute(x,y,z)
+	double x,y,z;
+{
+	z = (-a*x*y)/((1+x*x)*(1+y*y)) - z;
+	return(z);
+}
+
+// involutions 
 point ix(p)
 	point p;
 {
@@ -71,16 +80,9 @@ point iz(p)
 	return(p);
 }
 
-/* Involution of z, fixing x and y */
-/* z -> (-axy)/((1+x^2)(1+y^2)) - z */
-double involute(x,y,z)
-	double x,y,z;
-{
-	z = (-a*x*y)/((1+x*x)*(1+y*y)) - z;
-	return(z);
-}
 
-/* Symmetry (x,y,z) -> (-z,y,-x) */ //Ehan changed this
+
+// Symmetry (x,y,z) -> (-z,y,-x) 
 point sym(p)
 	point p;
 {
@@ -90,19 +92,15 @@ point sym(p)
 	return(p);
 }
 
-/* Automorphism of K3 */
+// f = iz iy ix
 point f(p)
 	point p;
 {
-	/* Ethan changed: originally was sym(ix(iy)iz) */
-	//iz(iy(ix(iz(iy(ix(p))))))
-	return iz(iy(ix(p))); //CAREFUL: ethan changed Mar4
-
-
+	return iz(iy(ix(p))); 
 }
 	
 
-/* Change parameters for K3 surface */
+// Change parameters for K3 surface 
 void setk3(newa,newb)
 	double newa, newb;
 {
@@ -115,8 +113,8 @@ void setsep(double s)
 	sep = s;
 }
 
-/* Test if real point is on upper sheet (max z) */
-/* Just check if invz makes the z coordinate smaller */
+// Test if real point is on upper sheet (max z) 
+// Just check if invz makes the z coordinate smaller 
 int top(p)
 	point p;
 {
@@ -142,7 +140,7 @@ int topy(p)
 	return(q.y <= p.y);
 }
 
-/* Defining equation of surface */
+// Defining equation of surface 
 double surf(p)
 	point p;
 {
@@ -154,7 +152,7 @@ double surf(p)
 }
 
 
-/* Gradient/|Grad|^2 of defining equation of surface */
+// Gradient/|Grad|^2 of defining equation of surface
 point grad(p)
 	point p;
 {
@@ -173,7 +171,7 @@ point grad(p)
 	return(v);
 }
 
-/* Follow gradient from p to point on surface */
+// Follow gradient from p to point on surface 
 point newton(p)
 	point p;
 {
@@ -202,7 +200,7 @@ point newton_plane(p)
 	double s;
 	int i;
 
-	for(i=0; i<100000; i++) // was 1000
+	for(i=0; i<100000; i++) 
 	{	s = surf(p);
 		if(s < .00001 && (-s) < .00001) return(p); 
 		v = rescale(p);
@@ -210,16 +208,16 @@ point newton_plane(p)
 		p.y = p.y - s*v.y*.01;
 		p.z = p.z - s*v.z*.01;
 	}
-	fprintf(stderr,"Error:  Newton iteration failed after 1000 steps\n");
+	fprintf(stderr,"Error:  Newton iteration failed after 100000 steps\n");
 	exit(1);
 }
 
-/* Subdivide a segment into n segments WITH NEWTON ITERATION*/ /*arrays in C are passed to function by reference*/
+// Subdivide a segment into n segments WITH NEWTON ITERATION
 void subdivide(point p,point q,point ps[],int n)
 {
 	int i;
 
-	for(i=1; i<n; i++) /*Ethan chaned i<n to i<=n*/
+	for(i=1; i<n; i++) 
 	{	ps[i].x = (i*q.x + (n-i)*p.x)/n;
 	 	ps[i].y = (i*q.y + (n-i)*p.y)/n;
 	 	ps[i].z = (i*q.z + (n-i)*p.z)/n;
@@ -234,7 +232,7 @@ void subdivide_plane(point p,point q,point ps[],int n)
 	point p_plane = transform(p);
 	point q_plane = transform(q);
 	point temp;
-	for(i=1; i<n; i++) /*Ethan chaned i<n to i<=n*/
+	for(i=1; i<n; i++) 
 	{	temp.x = (i*q_plane.x + (n-i)*p_plane.x)/n;
 	 	temp.y = (i*q_plane.y + (n-i)*p_plane.y)/n;
 	 	temp.z = (i*q_plane.z + (n-i)*p_plane.z)/n;
@@ -242,14 +240,14 @@ void subdivide_plane(point p,point q,point ps[],int n)
 	}
 }
 
-/* Norm of a point */
+// Norm of a point 
 double norm(p)
 	point p;
 {
 	return(p.x*p.x + p.y*p.y + p.z*p.z);
 }
 
-/* Distance between points */
+// Distance between points 
 double dist(p,q)
 	point p, q;
 {
@@ -259,7 +257,7 @@ double dist(p,q)
 	return(sqrt(norm(p)));
 }
 
-/* Rotate point */
+// Rotate point 
 point rotate(p)
 	point p;
 {
@@ -271,8 +269,8 @@ point rotate(p)
 	return(q);
 }
 
-/* Map segment */
-/* Subdivides and returns new length */
+// Map segment
+// Subdivides and returns new length 
 int fseg(p,q,ps)
 	point p, q, ps[];
 {
@@ -292,8 +290,8 @@ int fseg(p,q,ps)
 	return(n);
 }
 
-/* Map path */
-/* n = number of segments; returns new n */
+// Map path 
+// n = number of segments; returns new n 
 int fpath(point ps[],int np)
 {
 	point rs[SUBMAX];
@@ -326,7 +324,7 @@ int fpath(point ps[],int np)
 	return(np);
 }
 
-/* ERROR:  Too many subdivisions */
+// ERROR:  Too many subdivisions 
 void suberr(n)
 	int n;
 {
@@ -336,7 +334,7 @@ void suberr(n)
 	exit(1);
 }
 
-/* ERROR:  Path too long */
+// ERROR:  Path too long 
 void patherr()
 {
 	fprintf(stderr,
@@ -384,7 +382,7 @@ point inv_transform(point p){
 }
 
 
-//derivatives
+//derivatives of the involutions
 void Dix(point p, double **matrix) {
 	matrix[0][0] = -1;
     matrix[0][1] = -a*p.z*(1-p.y*p.y)/((1 + p.z*p.z)*(1 + p.y*p.y)*(1 + p.y*p.y));
@@ -463,7 +461,7 @@ void printMatrix(double **matrix, int ROWS1, int COLS1) {
 	for (int i = 0; i < ROWS1; ++i) {
         fprintf(stderr, "{");
 		for (int j = 0; j < COLS1; ++j) {
-            fprintf(stderr, "%.15f", matrix[i][j]);//ethan changed to .15
+            fprintf(stderr, "%.15f", matrix[i][j]);
 			if(j < COLS1-1){
 				fprintf(stderr, ",");
 			} 
