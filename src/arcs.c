@@ -1,6 +1,6 @@
 //NOTES:
 	//line width and dot side can be changed in ps.c 
-	//throughout: path == arc
+	//throughout: 'path' = 'arc'
 
 
 #include "k3.h"
