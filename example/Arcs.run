@@ -1,3 +1,5 @@
+../bin/arcs -r 3 -e .002 -p 10 2 -u -w 1| ps2pdf - > figure4.pdf 
+open figure4.pdf &
 
 ../bin/arcs -r 3 -e .0002 -p 10 2 -u -v 0  -w 1 | ps2pdf - > arc0.pdf 
 open arc0.pdf &
@@ -17,5 +19,6 @@ open arc6.pdf &
 open arc7.pdf &
 ../bin/arcs -r 3 -e .0002 -p 10 2 -u -v 8  -w 1 | ps2pdf - > arc8.pdf 
 open arc8.pdf &
+
 
 

@@ -3,16 +3,16 @@ Much of this ReadMe is a regurgitation of his ReadMe.
 
 QUICKSTART.
 Starting in 'example' or 'src' folders.
-To execute './Mclass.run' type
-cd ..; cd src; make; cd ..; cd example; ./Mclass.run
+To execute './Arcs.run' type
+cd ..; cd src; make; cd ..; cd example; ./Arcs.run
 Same for other .run files
 
 THEORY.  A K3 surface S in R^3 is specified by the equation
 
-(1+x^2)(1+y^2)(1+z^2) + Axyz = B .
+(1+x^2)(1+y^2)(1+z^2) + Axyz = B
 
 In many files, we set $A = 10$, $B = 2$. 
-	warning: periodicExact, derivativesExact, and derivatives have $A = 10$, $B = 2$ hard-coded into some function
+	warning: periodicExact, derivativesExact, and derivatives have $A = 10$, $B = 2$ hard-coded into some functions
 
 Each line parallel to the x, y or z axis meets S in 2
 points, so we obtain 3 involutions by "sheet interchange".
@@ -20,7 +20,7 @@ These maps preserves a natural volume element on S.
 
 Set f = Iz Iy Ix;
 
-PROGRAMS.  This directory contains 7 programs:
+PROGRAMS.  This directory contains 8 programs:
 
 (1) periodicExact.c 
 		- Verifies whether a particular orbit is a delta-pseudo-orbit for fixed delta, using the GNU MPFR library
@@ -64,6 +64,18 @@ PROGRAMS.  This directory contains 7 programs:
 	Outputs
 		- arc data for $f^i(p_k)$, where $i$ is fixed and $k$ varies over $0\leq k < orbit_length -1
 		- output is printed to the command line
+	To generate the starting point of 'figure4':
+		(i)	Make sure that:
+				marked_point.x = -1.726895448754858426328854724474;  
+				marked_point.y = 1.041643093944314148360673792017;
+				marked_point.z = 1.726895448754858426328854724474;	
+		(ii) In Arcs.run: 
+				../bin/arcs -r 3 -e .002 -p 10 2 -u -w 1| ps2pdf - > figure4.pdf 
+				open figure4.pdf &
+		(iii) To see each image arc individually, in Arcs.run:
+				../bin/arcs -r 3 -e .0002 -p 10 2 -u -v 0  -w 1 | ps2pdf - > arc0.pdf 
+				open arc0.pdf &
+			and change arcs by changing the integer folling '-v' to anything 0-9
 
 (4) mclass.c
 		- used for writing the mapping class of f^2 as a product of dehn half-twists
@@ -82,17 +94,20 @@ PROGRAMS.  This directory contains 7 programs:
 (7) FlipperDilation.ipynb
 		- A jupyter notebook file, for running Flipper inside SageMath. 
 		- Inputs the output of arcs.c into flipper to find the dilatation of [f^2]
+	
+(8) K3.c and K3.h
+		- K3.c contains some functions used in other files. 
+        - K3.h declares these functions and sets error thresholds.
 
-See .c files for comments describing specific functions
+See the individual .c files for comments describing specific functions
 
 EXAMPLES.
 
 All files can be run using the command-line input from QUICKSTART.
 
 An example of a arcs.run is:
-
-	../bin/arcs -r 2 -e .0002 -p 10 2 -l 3 -v 0 -w 1 | ps2pdf - > arcs0.pdf 
-	open arcs0.pdf &
+	../bin/arcs -r 3 -e .0002 -p 10 2 -u -v 0  -w 1 | ps2pdf - > arc0.pdf 
+	open arc0.pdf &
 
 
 TROUBLESHOOTING

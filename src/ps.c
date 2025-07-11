@@ -5,12 +5,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define PAGEX 540       /* Page size: 540 default */
-#define PAGEY 720       /* Offset of lower left corner: 720 default */
+#define PAGEX 540       // Page size: 540 default 
+#define PAGEY 720       // Offset of lower left corner: 720 default 
 #define CORNX 36
 #define CORNY 36
-#define LINEWIDTH .3	 /* Line width in device units */
-#define BORDER 0.10     /* Default border percentage */
+#define LINEWIDTH .3	 // Line width in device units
+#define BORDER 0.10     // Default border percentage 
 
 //defaults
 static double linewidth=LINEWIDTH;

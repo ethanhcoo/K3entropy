@@ -112,7 +112,7 @@ int topy(point p);
 #define NEWTONCAUTION 1.0	/* Multiple of grad to follow */
 
 /* Subdivisions and point on stable manifold &  */
-#define SUBMAX 100000 
+#define SUBMAX 200000 
 #define PSMAX 3500000 
 
 /* Max separation of points in plot */

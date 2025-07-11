@@ -1,12 +1,16 @@
-//NOTES:
-	//line width and dot side can be changed in ps.c 
-	//throughout: 'path' = 'arc'
+//BEFORE BEGINNING: make sure to read the 'readme' arcs.c section
 
-//Functions used from k3.c:
+//Functions used from k3.c [aside from read-ins]:
 	// subdivide_plane(), dist(), transform(), stereo_proj(), rescale(), fpath(), unreal()
 
 //Functions used from ps.c:
 	// ps_open(), ps_window(), ps_close(), ps_dot(), ps_dot_transparent(), ps_line()
+
+//NOTES:
+	//line width and dot side can be changed in ps.c 
+	//throughout: 'path' = 'arc'
+	//must have ps (postscript) to pdf installed, 'ps2pdf'
+
 
 
 
