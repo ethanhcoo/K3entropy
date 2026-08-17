@@ -15,14 +15,14 @@ enum {
  * ARC_CERTIFICATE_ENDPOINT_HEIGHT; every interior height is 0 (below) or
  * 1 (above).  Row k in each array belongs to arc k.
  *
- * The unreduced rows are the literal arc-data of the particular rational
- * polygonal paths constructed and certified by verifyArcs.c.  The reduced
- * rows are obtained from them by deleting endpoint spurs and adjacent inverse
- * crossings.  Only the reduced rows are input to mclass.c.
+ * The unreduced rows record the arc-data of the rational polygonal paths
+ * constructed and checked by verifyArcs.c.  The reduced rows are obtained by
+ * deleting endpoint spurs and adjacent inverse crossings.  Only the reduced
+ * rows are input to mclass.c.
  *
  * Crossing direction is not stored because it is not part of the manuscript's
  * definition of arc-data.  verifyArcs.c determines each direction exactly
- * from the rational polygon before performing the reduction.
+ * from the rational polygon before simplifying the row.
  */
 extern const int
     arc_certificate_unreduced_path_lengths[ARC_CERTIFICATE_ARC_COUNT];

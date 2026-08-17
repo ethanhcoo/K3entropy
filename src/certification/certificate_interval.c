@@ -1,11 +1,16 @@
+/*
+ * Outward-rounded interval arithmetic shared by the certification programs.
+ * Its arithmetic operations enclose the corresponding exact real results.
+ */
+
 #include "certificate_interval.h"
 
 #include <stddef.h>
 
 /*
- * All arithmetic is performed in temporaries having the destination's
- * precision.  Besides keeping each endpoint rounded in the conservative
- * direction, this makes every operation safe when result aliases an input.
+ * Arithmetic is performed in temporaries at the destination's precision.
+ * Directed rounding preserves the endpoint bounds, and the temporaries allow
+ * the result to alias an input.
  */
 
 static cert_interval_status destination_precision(
@@ -49,10 +54,9 @@ static cert_interval_status commit(
     }
 
     /*
-     * Most callers already supply temporaries at the destination precision.
-     * A copy may instead narrow a higher-precision interval.  Round that case
-     * into separate temporaries first so an exponent-range failure cannot
-     * partially overwrite the destination promised unchanged on failure.
+     * Most callers supply endpoints at the destination precision.  When a
+     * copy narrows a higher-precision interval, round into temporaries first
+     * so that an exponent-range failure leaves the destination unchanged.
      */
     if (mpfr_get_prec(lo) != precision || mpfr_get_prec(hi) != precision) {
         mpfr_init2(rounded_lo, precision);

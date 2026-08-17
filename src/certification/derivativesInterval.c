@@ -1,32 +1,28 @@
 /*
- * A rigorous interval-arithmetic version of derivativesExact.c.
+ * This program certifies the derivative estimates in Appendix C.2. It reads
+ * the pseudo-orbit and chart choices from k3_orbit_data.c and uses the
+ * outward-rounded MPFR intervals in certificate_interval.c.
  *
- * This file follows the structure, function names, chart encoding, and
- * comments of derivativesExact.c, but every scalar is represented by an
- * MPFR interval.  Each finite decimal input is interpreted as the exact
- * rational number represented by its decimal expansion: MPFR parses it
- * once with downward rounding and once with upward rounding.  Every
- * subsequent operation rounds lower endpoints toward -infinity and upper
- * endpoints toward +infinity.
- *
- * The program aborts if a denominator interval contains zero, if a
- * radicand interval is not certified to be nonnegative, or if MPFR reports
- * a fatal range/domain condition.  It implements the certifications stated
- * in Appendix C.2 of the article:
- *
- *   (1) the entries of Table 3 are correct two-decimal roundings;
+ * It checks four things:
+ *   (1) the entries of Table 3 are the correct two-decimal roundings;
  *   (2) K < 115, R < 163, and M < 442;
- *   (3) the discriminant is positive on the axis-aligned 10^{-3}-squares
- *       around the pseudo-orbit coordinates (and hence on the Euclidean
- *       balls contained in those squares); and
- *   (4) every entry of L_i - \widetilde L_i has absolute value < 10^{-2},
- *       where \widetilde L_i is the exact rational matrix displayed in
- *       Table 4.
+ *   (3) the discriminant is positive on the axis-aligned squares of radius
+ *       10^{-3} around the pseudo-orbit coordinates, and hence on the balls
+ *       inside them; and
+ *   (4) every entry of L_i - \widetilde L_i has absolute value less than
+ *       10^{-2}, where \widetilde L_i is the rational matrix in Table 4.
  *
- * The original derivativesExact.c is intentionally left unchanged.
+ * Together with the analytic estimates in the manuscript, the bounds in (2)
+ * give |\mathcal D| < 116 and ||D\mathcal D||_{C^1,infinity} < 443 on the
+ * 10^{-5}-balls. The manuscript then obtains the bounds 122 and
+ * 2.5 * 10^4 for the first and second derivatives of p_+ and p_-; those
+ * later estimates are not checked separately by this program.
+ *
+ * Each finite decimal string is treated as the exact rational number it
+ * denotes by parsing it once downward and once upward. An inconclusive
+ * interval check stops the program without a certificate.
  */
 
-/* A particular pseudo-orbit */
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpfr.h>
@@ -43,7 +39,7 @@ typedef struct {
 } mpfr_point;
 
 /*
- * The exact rational matrices \widetilde L_i displayed in Table 4.  A
+ * The exact rational matrices \widetilde L_i displayed in Table 4. A
  * finite decimal string denotes the corresponding exact rational number,
  * not a binary floating-point approximation.
  */
@@ -71,8 +67,8 @@ enum table3_column {
 };
 
 /*
- * Exact decimal entries displayed in Table 3.  To certify round-to-nearest
- * to two decimal places, the certification proves that each exact value is at
+ * Exact decimal entries displayed in Table 3. To certify rounding to two
+ * decimal places, the program proves that each exact value is at
  * distance strictly less than 0.005 from the corresponding entry below.
  */
 static const char *table3_decimal[K3_ORBIT_LENGTH][6] = {
@@ -111,9 +107,8 @@ static void require_interval_status(
 }
 
 /*
- * Every interval used in a certificate must have two finite, ordered MPFR
- * endpoints.  Checking this invariant prevents a NaN or infinity from
- * making an inequality comparison appear conclusive.
+ * Reject nonfinite or unordered intervals before using them in certificate
+ * comparisons.
  */
 static void require_valid_interval(const interval *x, const char *context)
 {
@@ -255,9 +250,9 @@ static void interval_ui_sub(interval *z, unsigned long value, const interval *x)
 }
 
 /*
- * Retain the certification program's original reciprocal-then-multiply evaluation order.
- * A direct MPFR division is also rigorous, but can produce a different (and
- * usually tighter) printed enclosure.
+ * Use reciprocal-then-multiply division here to preserve the established
+ * interval enclosures. cert_interval_div_ui uses direct division and can
+ * give a different, usually tighter, printed enclosure.
  */
 static void interval_div_ui(interval *z, const interval *x, unsigned long value)
 {
@@ -272,8 +267,8 @@ static void interval_div_ui(interval *z, const interval *x, unsigned long value)
 }
 
 /*
- * Likewise retain exponentiation by squaring through the shared multiply
- * operation so this refactor does not change the certificate transcript.
+ * Use exponentiation by squaring through interval_mul to preserve the
+ * established evaluation order and certificate transcript.
  */
 static void interval_pow_ui(interval *z, const interval *x, unsigned long power)
 {
@@ -379,42 +374,45 @@ static void zero_matrix(interval **matrix, int rows, int columns)
 }
 
 /* Interval evaluators for the surface formulas. */
-void alphaExact(interval *result, const interval *x, const interval *y); // [alpha]
-void betaExact(interval *result, const interval *x, const interval *y); // [beta]
-void DExact(interval *result, const interval *x, const interval *y); // [D]
-void ix_exact(mpfr_point *p); // [I_x]
-void iy_exact(mpfr_point *p); // [I_y]
-void iz_exact(mpfr_point *p); // [I_z]
-void pPlusExact(interval *result, const interval *x, const interval *y); // [p_+]
-void pMinusExact(interval *result, const interval *x, const interval *y); // [p_-]
+void alphaExact(interval *result, const interval *x, const interval *y);
+void betaExact(interval *result, const interval *x, const interval *y);
+void DExact(interval *result, const interval *x, const interval *y);
+void ix_exact(mpfr_point *p); /* [sigma_1] */
+void iy_exact(mpfr_point *p); /* [sigma_2] */
+void iz_exact(mpfr_point *p); /* [sigma_3] */
+void pPlusExact(interval *result, const interval *x, const interval *y);
+void pMinusExact(interval *result, const interval *x, const interval *y);
 void lift_exact_charts(
     mpfr_point *p,
     const interval *x,
     const interval *y,
     int i
-); // [Psi_k^{pm}]
+);
 
-/* Derivatives used in the two certifications. */
-void DixExact(const mpfr_point *p, interval **matrix);// [DIx]
-void DiyExact(const mpfr_point *p, interval **matrix);// [DIy]
-void DizExact(const mpfr_point *p, interval **matrix);// [DIz]
-void DxExact(interval *result, const interval *x, const interval *y);// [partial_x D]
-void DyExact(interval *result, const interval *x, const interval *y);// [partial_y D]
-void DxxExact(interval *result, const interval *x, const interval *y);// [partial_xx D]
-void DyyExact(interval *result, const interval *x, const interval *y);// [partial_yy D]
-void DxyExact(interval *result, const interval *x, const interval *y);// [partial_xy D]
-void pxExact(interval *result, const interval *s, const interval *t);// [partial_s p_+]
-void pyExact(interval *result, const interval *s, const interval *t);// [partial_t p_+]
+/*
+ * Derivative evaluators and matrix operations used in the certifications
+ * below.
+ */
+void DixExact(const mpfr_point *p, interval **matrix); /* [D sigma_1] */
+void DiyExact(const mpfr_point *p, interval **matrix); /* [D sigma_2] */
+void DizExact(const mpfr_point *p, interval **matrix); /* [D sigma_3] */
+void DxExact(interval *result, const interval *x, const interval *y);
+void DyExact(interval *result, const interval *x, const interval *y);
+void DxxExact(interval *result, const interval *x, const interval *y);
+void DyyExact(interval *result, const interval *x, const interval *y);
+void DxyExact(interval *result, const interval *x, const interval *y);
+void pxExact(interval *result, const interval *s, const interval *t);
+void pyExact(interval *result, const interval *s, const interval *t);
 void alpha_xExact(
     interval *result,
     const interval *x,
     const interval *y
-);// [partial_x alpha]
+);
 void alpha_yExact(
     interval *result,
     const interval *x,
     const interval *y
-);// [partial_y alpha]
+);
 void multiplyMatricesExact(
     interval **firstMatrix,
     interval **secondMatrix,
@@ -423,7 +421,7 @@ void multiplyMatricesExact(
     int COLS1,
     int ROWS2,
     int COLS2
-); // result = (firstMatrix)(secondMatrix)
+);
 void printMatrixExact(interval **matrix, int ROWS1, int COLS1);
 
 static void print_interval(const interval *x)
@@ -432,11 +430,11 @@ static void print_interval(const interval *x)
 }
 
 /*
- * Update maximum with an outward-rounded upper bound for
+ * Increase maximum to an outward-rounded upper bound for
  *
  *     sup_{x in enclosure} |x - q|,
  *
- * where q is the exact rational represented by reference_decimal.  Parsing
+ * where q is the exact rational represented by reference_decimal. Parsing
  * q in both directed modes gives an interval containing q, so subtracting
  * that interval can only enlarge the resulting error bound.
  */
@@ -489,10 +487,10 @@ int main(int argc, char *argv[])
     (void)argc;
     (void)argv;
 
-    /* Every operation below supplies its own directed rounding mode. */
+    /* Every interval-arithmetic operation below supplies directed rounding. */
     mpfr_set_default_rounding_mode(MPFR_RNDN);
 
-    /* Use the precision and exponent range recorded for this certification. */
+    /* Fix the precision and exponent range for this certification. */
     mpfr_set_default_prec(PRECISION);
     if (mpfr_set_emin(-1073) != 0 || mpfr_set_emax(1024) != 0) {
         fail("MPFR rejected the requested exponent range");
@@ -577,13 +575,13 @@ int main(int argc, char *argv[])
             k3_orbit_b_decimal[i]
         );
 
-        /* Print the Table 1 chart code for an auditable transcript. */
+        /* Print the encoded Table 1 chart choice beside its enclosures. */
         fprintf(stderr, "chart is %d\n", k3_orbit_chart_code[i]);
 
         /*
-         * Enclose the six exact values in Table 3.  In addition to updating
-         * K, R, and M, compare each enclosure directly with the exact
-         * two-decimal rational printed in the table.
+         * Enclose the six exact quantities whose two-decimal roundings are
+         * displayed in Table 3. In addition to updating K, R, and M, compare
+         * each enclosure directly with the exact rational printed there.
          */
         DExact(&out, &a[i], &b[i]);
         update_max_abs(K_upper, &out);
@@ -771,10 +769,8 @@ int main(int argc, char *argv[])
         printMatrixExact(temp2, 2, 2);
 
         /*
-         * The article defines \widetilde L_i to be the exact four-decimal
-         * rational matrix in Table 4.  Bound its distance directly from
-         * every entry enclosure for L_i; no hidden higher-precision matrix
-         * is used in this certificate.
+         * Compare each entry of L_i with the corresponding exact
+         * four-decimal entry of \widetilde L_i in Table 4.
          */
         for (int row = 0; row < 2; row++) {
             for (int column = 0; column < 2; column++) {
@@ -872,7 +868,7 @@ int main(int argc, char *argv[])
     return EXIT_SUCCESS;
 }
 
-// alpha = (xy)/((1+x^2)(1+y^2))
+/* alpha(x,y) = xy/((1+x^2)(1+y^2)). */
 void alphaExact(interval *result, const interval *x, const interval *y)
 {
     interval temp1, temp2, temp3;
@@ -880,21 +876,15 @@ void alphaExact(interval *result, const interval *x, const interval *y)
     interval_init(&temp2);
     interval_init(&temp3);
 
-    // temp1 = x * y
     interval_mul(&temp1, x, y);
 
-    // temp2 = 1 + x * x
     interval_mul(&temp2, x, x);
     interval_add_si(&temp2, &temp2, 1);
 
-    // temp3 = 1 + y * y
     interval_mul(&temp3, y, y);
     interval_add_si(&temp3, &temp3, 1);
 
-    // temp2 = temp2 * temp3
     interval_mul(&temp2, &temp2, &temp3);
-
-    // result = temp1 / temp2
     interval_div(result, &temp1, &temp2);
 
     interval_clear(&temp1);
@@ -902,7 +892,7 @@ void alphaExact(interval *result, const interval *x, const interval *y)
     interval_clear(&temp3);
 }
 
-// beta = 1/((1+x^2)(1+y^2))
+/* beta(x,y) = 1/((1+x^2)(1+y^2)). */
 void betaExact(interval *result, const interval *x, const interval *y)
 {
     interval temp2, temp3, one;
@@ -910,18 +900,14 @@ void betaExact(interval *result, const interval *x, const interval *y)
     interval_init(&temp3);
     interval_init(&one);
 
-    // temp2 = 1 + x * x
     interval_mul(&temp2, x, x);
     interval_add_si(&temp2, &temp2, 1);
 
-    // temp3 = 1 + y * y
     interval_mul(&temp3, y, y);
     interval_add_si(&temp3, &temp3, 1);
 
-    // temp2 = temp2 * temp3
     interval_mul(&temp2, &temp2, &temp3);
 
-    // result = 1 / temp2
     interval_set_si(&one, 1);
     interval_div(result, &one, &temp2);
 
@@ -958,22 +944,22 @@ void iy_exact(mpfr_point *p)
     clear_point(&q);
 }
 
-//iz (x,y,z) = (x,y, -z - (10 alpha (x,y)))
+/* sigma_3(x,y,z) = (x,y,-z-10 alpha(x,y)). */
 void iz_exact(mpfr_point *p)
 {
     interval temp1;
     interval_init(&temp1);
 
-    // temp1 = -10 * alpha(x,y)
     alphaExact(&temp1, &p->x, &p->y);
     interval_mul_si(&temp1, &temp1, -10);
-
-    // result = temp1 - z
     interval_sub(&p->z, &temp1, &p->z);
     interval_clear(&temp1);
 }
 
-// D(x,y) = 100x^2y^2 + 8(1+x^2)(1+y^2) - 4(1+x^2)^2(1+y^2)^2
+/*
+ * D(x,y) = 100x^2y^2 + 8(1+x^2)(1+y^2)
+ *          - 4(1+x^2)^2(1+y^2)^2.
+ */
 void DExact(interval *result, const interval *x, const interval *y)
 {
     interval temp1, temp2, temp3, temp4;
@@ -982,13 +968,11 @@ void DExact(interval *result, const interval *x, const interval *y)
     interval_init(&temp3);
     interval_init(&temp4);
 
-    // temp1 = 100 * x * x * y * y
     interval_mul(&temp1, x, x);
     interval_mul(&temp2, y, y);
     interval_mul(&temp1, &temp1, &temp2);
     interval_mul_si(&temp1, &temp1, 100);
 
-    // temp2 = 8 * (1 + x * x) * (1 + y * y)
     interval_mul(&temp2, x, x);
     interval_add_si(&temp2, &temp2, 1);
     interval_mul(&temp3, y, y);
@@ -996,7 +980,6 @@ void DExact(interval *result, const interval *x, const interval *y)
     interval_mul(&temp2, &temp2, &temp3);
     interval_mul_si(&temp2, &temp2, 8);
 
-    // temp3 = 4 * (1 + x * x)^2 * (1 + y * y)^2
     interval_mul(&temp3, x, x);
     interval_add_si(&temp3, &temp3, 1);
     interval_mul(&temp3, &temp3, &temp3);
@@ -1008,7 +991,6 @@ void DExact(interval *result, const interval *x, const interval *y)
     interval_mul(&temp3, &temp3, &temp4);
     interval_mul_si(&temp3, &temp3, 4);
 
-    // result = temp1 + temp2 - temp3
     interval_add(result, &temp1, &temp2);
     interval_sub(result, result, &temp3);
 
@@ -1018,7 +1000,7 @@ void DExact(interval *result, const interval *x, const interval *y)
     interval_clear(&temp4);
 }
 
-//p(x,y) = -5 alpha(x,y) + .5 (beta(x,y) sqrt(D(x,y)))
+/* p_+(x,y) = -5 alpha(x,y) + beta(x,y)sqrt(D(x,y))/2. */
 void pPlusExact(interval *result, const interval *x, const interval *y)
 {
     interval temp1, temp2, temp3;
@@ -1026,18 +1008,15 @@ void pPlusExact(interval *result, const interval *x, const interval *y)
     interval_init(&temp2);
     interval_init(&temp3);
 
-    //temp1 = -5 alpha
     alphaExact(&temp1, x, y);
     interval_mul_si(&temp1, &temp1, -5);
 
-    //temp2 = (1/2)beta sqrt(D)
     betaExact(&temp2, x, y);
     DExact(&temp3, x, y);
     interval_sqrt(&temp3, &temp3);
     interval_mul(&temp2, &temp2, &temp3);
     interval_div_ui(&temp2, &temp2, 2);
 
-    //p_+ = -5 alpha + (1/2)beta sqrt(D)
     interval_add(result, &temp1, &temp2);
 
     interval_clear(&temp1);
@@ -1045,6 +1024,7 @@ void pPlusExact(interval *result, const interval *x, const interval *y)
     interval_clear(&temp3);
 }
 
+/* p_-(x,y) = -5 alpha(x,y) - beta(x,y)sqrt(D(x,y))/2. */
 void pMinusExact(interval *result, const interval *x, const interval *y)
 {
     interval temp1, temp2, temp3;
@@ -1052,18 +1032,15 @@ void pMinusExact(interval *result, const interval *x, const interval *y)
     interval_init(&temp2);
     interval_init(&temp3);
 
-    //temp1 = -5 alpha
     alphaExact(&temp1, x, y);
     interval_mul_si(&temp1, &temp1, -5);
 
-    //temp2 = (1/2)beta sqrt(D)
     betaExact(&temp2, x, y);
     DExact(&temp3, x, y);
     interval_sqrt(&temp3, &temp3);
     interval_mul(&temp2, &temp2, &temp3);
     interval_div_ui(&temp2, &temp2, 2);
 
-    //p_- = -5 alpha - (1/2)beta sqrt(D)
     interval_sub(result, &temp1, &temp2);
 
     interval_clear(&temp1);
@@ -1185,28 +1162,20 @@ void alpha_xExact(
     interval_init(&temp2);
     interval_init(&temp3);
 
-    // y * (1 - x^2) / ((1 + x^2)^2 * (1+y^2))
-
-    // Calculate temp1 = y^2 + 1
+    /* partial_x alpha = y(1-x^2)/((1+x^2)^2(1+y^2)). */
     interval_mul(&temp1, y, y);
     interval_add_si(&temp1, &temp1, 1);
 
-    // Calculate temp2 = (1 + x^2)^2
     interval_mul(&temp2, x, x);
     interval_add_si(&temp2, &temp2, 1);
     interval_mul(&temp2, &temp2, &temp2);
 
-    // Calculate temp1 = (y^2 + 1) * (1 + x^2)^2
     interval_mul(&temp1, &temp1, &temp2);
 
-    // Calculate temp2 = 1 - x^2
     interval_mul(&temp2, x, x);
     interval_ui_sub(&temp2, 1, &temp2);
 
-    // Calculate temp2 = (1 - x^2) * y
     interval_mul(&temp2, &temp2, y);
-
-    // Calculate result = temp2 / temp1
     interval_div(result, &temp2, &temp1);
 
     interval_clear(&temp1);
@@ -1310,7 +1279,10 @@ void DizExact(const mpfr_point *p, interval **matrix)
     interval_clear(&temp3);
 }
 
-//Dx(x,y) = 200*x*y^2 + 16*x*(1+y^2) - 16*x*(1+x^2)*(1+y^2)^2
+/*
+ * partial_x D = 200xy^2 + 16x(1+y^2)
+ *               - 16x(1+x^2)(1+y^2)^2.
+ */
 void DxExact(interval *result, const interval *x, const interval *y)
 {
     interval temp1, temp2, temp3, temp4;
@@ -1319,18 +1291,15 @@ void DxExact(interval *result, const interval *x, const interval *y)
     interval_init(&temp3);
     interval_init(&temp4);
 
-    // temp1 = 200 * x * y * y
     interval_mul(&temp1, x, y);
     interval_mul(&temp1, &temp1, y);
     interval_mul_si(&temp1, &temp1, 200);
 
-    // temp2 = 16 * x * (1 + y * y)
     interval_mul(&temp2, y, y);
     interval_add_si(&temp2, &temp2, 1);
     interval_mul(&temp2, &temp2, x);
     interval_mul_si(&temp2, &temp2, 16);
 
-    // temp3 = 16 * x * (1 + x * x) * (1 + y * y)^2
     interval_mul(&temp3, x, x);
     interval_add_si(&temp3, &temp3, 1);
     interval_mul(&temp4, y, y);
@@ -1340,7 +1309,6 @@ void DxExact(interval *result, const interval *x, const interval *y)
     interval_mul(&temp3, &temp3, x);
     interval_mul_si(&temp3, &temp3, 16);
 
-    // result = temp1 + temp2 - temp3
     interval_add(result, &temp1, &temp2);
     interval_sub(result, result, &temp3);
 
@@ -1355,7 +1323,10 @@ void DyExact(interval *result, const interval *x, const interval *y)
     DxExact(result, y, x);
 }
 
-//Dxx(x,y) = 200*y^2 + 16*(1+y^2) - 32*x^2*(1+y^2)^2 - 16*(1+x^2)*(1+y^2)^2
+/*
+ * partial_xx D = 200y^2 + 16(1+y^2) - 32x^2(1+y^2)^2
+ *                - 16(1+x^2)(1+y^2)^2.
+ */
 void DxxExact(interval *result, const interval *x, const interval *y)
 {
     interval temp1, temp2, temp3, temp4, temp5;
@@ -1365,16 +1336,13 @@ void DxxExact(interval *result, const interval *x, const interval *y)
     interval_init(&temp4);
     interval_init(&temp5);
 
-    // temp1 = 200 * y * y
     interval_mul(&temp1, y, y);
     interval_mul_si(&temp1, &temp1, 200);
 
-    // temp2 = 16 * (1 + y * y)
     interval_mul(&temp2, y, y);
     interval_add_si(&temp2, &temp2, 1);
     interval_mul_si(&temp2, &temp2, 16);
 
-    // temp3 = 32 * x * x * (1 + y * y)^2
     interval_mul(&temp3, x, x);
     interval_mul(&temp4, y, y);
     interval_add_si(&temp4, &temp4, 1);
@@ -1382,7 +1350,6 @@ void DxxExact(interval *result, const interval *x, const interval *y)
     interval_mul(&temp3, &temp3, &temp4);
     interval_mul_si(&temp3, &temp3, 32);
 
-    // temp4 = 16 * (1 + x * x) * (1 + y * y)^2
     interval_mul(&temp4, x, x);
     interval_add_si(&temp4, &temp4, 1);
     interval_mul(&temp5, y, y);
@@ -1391,7 +1358,6 @@ void DxxExact(interval *result, const interval *x, const interval *y)
     interval_mul(&temp4, &temp4, &temp5);
     interval_mul_si(&temp4, &temp4, 16);
 
-    // result = temp1 + temp2 - temp3 - temp4
     interval_add(result, &temp1, &temp2);
     interval_sub(result, result, &temp3);
     interval_sub(result, result, &temp4);
@@ -1408,7 +1374,7 @@ void DyyExact(interval *result, const interval *x, const interval *y)
     DxxExact(result, y, x);
 }
 
-//Dxy(x,y) = 432*x*y - 64*x*(1+x^2)*y*(1+y^2)
+/* partial_xy D = 432xy - 64x(1+x^2)y(1+y^2). */
 void DxyExact(interval *result, const interval *x, const interval *y)
 {
     interval temp1, temp2, temp3;
@@ -1416,11 +1382,9 @@ void DxyExact(interval *result, const interval *x, const interval *y)
     interval_init(&temp2);
     interval_init(&temp3);
 
-    // temp1 = 432 * x * y
     interval_mul(&temp1, x, y);
     interval_mul_si(&temp1, &temp1, 432);
 
-    // temp2 = 64 * x * (1 + x * x) * y * (1 + y * y)
     interval_mul(&temp2, x, x);
     interval_add_si(&temp2, &temp2, 1);
     interval_mul(&temp2, &temp2, x);
@@ -1430,7 +1394,6 @@ void DxyExact(interval *result, const interval *x, const interval *y)
     interval_mul(&temp2, &temp2, &temp3);
     interval_mul_si(&temp2, &temp2, 64);
 
-    // result = temp1 - temp2
     interval_sub(result, &temp1, &temp2);
 
     interval_clear(&temp1);
@@ -1439,19 +1402,16 @@ void DxyExact(interval *result, const interval *x, const interval *y)
 }
 
 /*
- * Enclose partial_s p_+(s,t).  The radical below is
+ * Enclose partial_s p_+(s,t). Set
  *
  *     S(s,t) = D(s,t)/4,
  *
- * so p_+ = -5 alpha + beta sqrt(S).  After differentiation and collecting
- * terms, partial_s p_+ is numerator/denominator with
+ * Thus p_+ = -5 alpha + beta sqrt(S). After collecting terms,
+ * partial_s p_+ is the quotient with numerator
  *
- * numerator =
-    s(-2+23t^2) - s^3(2+27t^2)
-    - 5t(sqrt(1 - t^4 - s^4(1 + t^2)^2 + s^2(23t^2 - 2t^4)))
-    + 5s^2t(sqrt(1 - t^4 - s^4(1 + t^2)^2 + s^2(23t^2 - 2t^4)))
+ *     s(-2+23t^2) - s^3(2+27t^2) - 5t sqrt(S) + 5s^2t sqrt(S)
  *
- * and denominator =
+ * and denominator
  *
  *     (1+s^2)^2 (1+t^2) sqrt(S(s,t)).
  */
@@ -1470,7 +1430,7 @@ void pxExact(interval *result, const interval *s, const interval *t)
     interval_init(&temp6);
     interval_init(&temp7);
 
-    // numerator = s * (-2 + 23*t*t) - s*s*s * (2 + 27*t*t)
+    /* numerator = s(-2+23t^2) - s^3(2+27t^2). */
     interval_mul(&temp1, t, t);
     interval_mul_si(&temp1, &temp1, 23);
     interval_add_si(&temp1, &temp1, -2);
@@ -1486,7 +1446,7 @@ void pxExact(interval *result, const interval *s, const interval *t)
     interval_mul(&temp2, &temp2, &temp3);
     interval_sub(&temp1, &temp1, &temp2);
 
-    //temp4 = 1 - t^4 - s^4 * (1 + t^2)^2
+    /* temp4 = 1 - t^4 - s^4(1+t^2)^2. */
     interval_pow_ui(&temp4, t, 4);
     interval_pow_ui(&temp5, s, 4);
     interval_mul(&temp6, t, t);
@@ -1496,7 +1456,7 @@ void pxExact(interval *result, const interval *s, const interval *t)
     interval_ui_sub(&temp4, 1, &temp4);
     interval_sub(&temp4, &temp4, &temp5);
 
-    //temp4 = 1 - t^4 - s^4*(1+t^2)^2 + s^2*(23*t^2-2*t^4)
+    /* Add s^2(23t^2-2t^4) to temp4. */
     interval_mul(&temp5, s, s);
     interval_mul_si(&temp6, t, 23);
     interval_mul(&temp6, &temp6, t);
@@ -1507,10 +1467,10 @@ void pxExact(interval *result, const interval *s, const interval *t)
     interval_mul(&temp6, &temp6, s);
     interval_add(&temp4, &temp4, &temp6);
 
-    //temp4 = sqrt(1 - t^4 - s^4*(1+t^2)^2 + s^2*(23*t^2-2*t^4))
+    /* temp4 = sqrt(S). */
     interval_sqrt(&temp4, &temp4);
 
-    // numerator += -5*t*temp4 + 5*s^2*t*temp4
+    /* Add -5t sqrt(S) + 5s^2t sqrt(S) to the numerator. */
     interval_mul(&temp5, t, &temp4);
     interval_mul_si(&temp5, &temp5, -5);
     interval_add(&numerator, &temp1, &temp5);
@@ -1521,7 +1481,7 @@ void pxExact(interval *result, const interval *s, const interval *t)
     interval_mul_si(&temp5, &temp5, 5);
     interval_add(&numerator, &numerator, &temp5);
 
-    // denominator = (1+s^2)^2*(1+t^2)*sqrt(...)
+    /* denominator = (1+s^2)^2(1+t^2)sqrt(S). */
     interval_mul(&temp1, s, s);
     interval_add_si(&temp1, &temp1, 1);
     interval_mul(&temp1, &temp1, &temp1);
@@ -1532,7 +1492,6 @@ void pxExact(interval *result, const interval *s, const interval *t)
     interval_mul(&denominator, &temp1, &temp2);
     interval_mul(&denominator, &denominator, &temp4);
 
-    // result = numerator / denominator
     interval_div(result, &numerator, &denominator);
 
     interval_clear(&numerator);

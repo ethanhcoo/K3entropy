@@ -1,3 +1,9 @@
+/*
+ * Simplification and validation of the arc-data used by verifyArcs.c.  This
+ * removes endpoint spurs and cancelling crossings, checks crossing directions,
+ * and provides comparison with stored position/height rows.
+ */
+
 #include "arc_word.h"
 
 #include <string.h>
@@ -72,9 +78,9 @@ int arc_word_reduce_relative(arc_gate_word *word, int puncture_count)
     }
 
     /*
-     * A word is either fully certified (every crossing has direction +/-1)
-     * or entirely legacy (every direction is zero and will be inferred).
-     * Mixing the two would make a cancellation depend on missing metadata.
+     * Either every direction is +/-1, or every direction is zero and will be
+     * inferred after simplification.  Mixing the two would make cancellation
+     * depend on missing direction data.
      */
     if (has_certified_direction && has_legacy_direction) {
         return 0;
@@ -107,11 +113,10 @@ int arc_word_reduce_relative(arc_gate_word *word, int puncture_count)
                 word->letters[i].side == word->letters[i + 1].side
             ) {
                 /*
-                 * A certified raw word records directions.  Two consecutive
-                 * crossings of the same ray can cancel only when their
-                 * directions are opposite.  Legacy rows have direction zero
-                 * because that field must be reconstructed from the comb
-                 * path, so retain compatibility with that input format.
+                 * Two consecutive crossings of the same ray can cancel only
+                 * when their directions are opposite.  A zero direction comes
+                 * from a position/height row and is inferred after
+                 * simplification.
                  */
                 if (
                     word->letters[i].direction != 0 &&
@@ -159,7 +164,7 @@ int arc_word_infer_directions(arc_gate_word *word, int puncture_count)
     } else if (word->letters[0].gate > word->start) {
         strip = word->start + 1;
     } else {
-        /* Endpoint-normalized words never start on the start barrier. */
+        /* Endpoint-simplified words never start on the start barrier. */
         return 0;
     }
 
@@ -192,7 +197,7 @@ int arc_word_infer_directions(arc_gate_word *word, int puncture_count)
     /*
      * The final strip must be one of the two strips incident to the ending
      * puncture.  A terminal crossing of the end barrier would have been
-     * removed by relative reduction.
+     * removed by relative simplification.
      */
     return strip == word->end || strip == word->end + 1;
 }

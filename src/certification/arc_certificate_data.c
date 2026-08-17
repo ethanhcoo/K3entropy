@@ -1,9 +1,9 @@
 #include "arc_certificate_data.h"
 
 /*
- * Literal arc-data of the certified rational polygonal paths.  The first and
- * last entries in each row are endpoint labels; all intervening entries are
- * crossings in path order, before any relative reduction.
+ * Literal arc-data of the rational polygonal paths checked by verifyArcs.c.
+ * The first and last entries in each row are endpoint labels; all intervening
+ * entries are crossings in path order, before simplification.
  */
 const int
 arc_certificate_unreduced_path_lengths[ARC_CERTIFICATE_ARC_COUNT] = {
@@ -57,8 +57,8 @@ arc_certificate_unreduced_heights[ARC_CERTIFICATE_ARC_COUNT]
 };
 
 /*
- * Canonical reduced rows consumed by mclass.c.  They are obtained from the
- * unreduced rows above by the relative normalization in arc_word.c.
+ * Reduced rows used by mclass.c.  They are obtained from the
+ * unreduced rows above by the relative simplification in arc_word.c.
  */
 const int
 arc_certificate_reduced_path_lengths[ARC_CERTIFICATE_ARC_COUNT] = {

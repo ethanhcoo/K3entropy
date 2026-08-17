@@ -1,27 +1,20 @@
 /*
- * Certificate for Appendix C.3 of
- * "A Real K3 Automorphism with Most of Its Entropy in the Real Part".
+ * This program certifies the pseudo-orbit estimates in Appendix C.3.
  *
- * This file is the outward-rounded counterpart of periodicExact.c.  It uses
- * the same ten decimal points, the same six-valued chart encoding, and the
- * same chart-lift -> f -> output-projection organization.  The difference is
- * that every formula evaluation is enclosed by an MPFR interval, with lower
- * endpoints rounded toward -infinity and upper endpoints toward +infinity;
- * scalar certificate bounds are rounded in their conservative direction.
+ * The ten points and chart choices come from k3_orbit_data.c, and the
+ * outward-rounded interval arithmetic comes from certificate_interval.c.
+ * For each point, the program lifts it through the chosen chart, applies
+ * f = sigma_3 o sigma_2 o sigma_1, and checks that the image lies in the
+ * chosen branch of the next chart. It then encloses f_i^c(0), checks the
+ * bounds displayed in the Appendix C.3 table, and certifies
  *
- * For each i, the certification program does all of the following:
+ *     0 is in U_i and ||f_i^c(0)||_2 < 10^(-29)
  *
- *   1. lifts (a_i,b_i) through the chart listed in Table 1;
- *   2. encloses f = sigma_3 o sigma_2 o sigma_1 on that lifted point;
- *   3. proves that the image lies in the required branch of the next chart;
- *   4. encloses f_i^c(0) in two residual intervals;
- *   5. proves the corresponding Appendix C.3 table row and
- *      ||f_i^c(0)||_2 < 10^(-29).
+ * for every i.
  *
- * Every finite decimal in this file denotes the exact rational represented
- * by that decimal expansion.  Parsing it once downward and once upward gives
- * an interval containing that exact rational.  Any inconclusive domain,
- * branch, or strict-inequality check terminates without a certificate.
+ * Every finite decimal input denotes the corresponding exact rational
+ * number. If a domain, branch, table-bound, or strict inequality cannot be
+ * certified, the program stops without a certificate.
  */
 
 #include "certificate_interval.h"
@@ -31,7 +24,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* Appendix C.3 uses 500 bits; an override is useful for audit builds. */
+/*
+ * Use the 500-bit precision stated in Appendix C.3 by default; audit builds
+ * may override PRECISION.
+ */
 #ifndef PRECISION
 #define PRECISION 500
 #endif
@@ -46,7 +42,7 @@ typedef struct {
     interval z;
 } interval_point;
 
-/* The directed-decimal bounds displayed in the Appendix C.3 table. */
+/* The lower and upper bounds displayed in the Appendix C.3 table. */
 static const char *const table_discriminant_lower[K3_ORBIT_LENGTH] = {
     "114", "8.70", "70.2", "8.59", "108",
     "10.4", "108", "8.59", "70.2", "8.70"
@@ -85,7 +81,7 @@ static _Noreturn void failf(const char *format, ...)
     exit(EXIT_FAILURE);
 }
 
-/* Keep the shared kernel's status API behind certificate-specific failures. */
+/* Convert interval errors into certificate failures. */
 static void require_interval_status(
     cert_interval_status status,
     const char *context
@@ -96,7 +92,7 @@ static void require_interval_status(
     }
 }
 
-/* A malformed interval must never be allowed to make a comparison vacuous. */
+/* Reject malformed intervals before using them in comparisons. */
 static void interval_require_valid(const interval *x, const char *context)
 {
     if (!cert_interval_valid(x)) {
@@ -284,7 +280,7 @@ static void require_strictly_positive(
     }
 }
 
-/* Decode periodicExact.c's six chart values into Psi_j and its branch. */
+/* Decode the projection number j from a shared chart code. */
 static int chart_number_from_code(int chart)
 {
     int number;
@@ -295,6 +291,7 @@ static int chart_number_from_code(int chart)
     return number;
 }
 
+/* Decode the branch sign from a shared chart code. */
 static int chart_sign_from_code(int chart)
 {
     int sign;
@@ -586,12 +583,13 @@ static void verify_output_chart_branch(
 }
 
 /*
- * Rigorous analogue of periodicExact.c's f_c.
+ * Apply f in the input chart and project to the output chart.
  *
- * On entry, s and t enclose the two input-chart coordinates.  On return,
- * they enclose the two unshifted coordinates in the output chart.  The
- * additional output intervals retain the two checks proving that the image
- * actually belongs to that output chart: D>0 and the correct branch sign.
+ * On entry, s and t enclose the two unshifted input-chart coordinates. On
+ * return, they enclose the two unshifted output-chart coordinates. The input
+ * discriminant records that the lift is defined, while the output
+ * discriminant and branch indicator record that the image lies in the
+ * requested output chart.
  */
 static void f_c(
     interval *s,
@@ -627,11 +625,7 @@ static void interval_abs_upper(mpfr_t result, const interval *x)
     );
 }
 
-/*
- * Rigorous analogue of periodicExact.c's dist_2plane.  The coordinate
- * differences are retained because Appendix C.3 records separate bounds
- * for them as well as the Euclidean norm bound.
- */
+/* Enclose both residuals and bound their Euclidean norm from above. */
 static void dist_2plane(
     mpfr_t result,
     interval *first_residual,
@@ -772,7 +766,7 @@ int main(void)
         fail("shared pseudo-orbit/chart data failed its self-check");
     }
 
-    /* Match the precision and exponent range used by periodicExact.c. */
+    /* Set the precision and exponent range before creating intervals. */
     mpfr_set_default_prec(PRECISION);
     if (
         mpfr_set_emin(EXPONENT_MIN) != 0
@@ -832,14 +826,17 @@ int main(void)
         mpfr_init2(second_residual_upper, PRECISION);
         mpfr_init2(norm_upper, PRECISION);
 
-        /* As in periodicExact.c, start from copies of (a_i,b_i). */
+        /*
+         * Start from interval enclosures of the exact chart center (a_i,b_i).
+         */
         interval_copy(&image_first, &a[i]);
         interval_copy(&image_second, &b[i]);
 
         /*
-         * Enclose the absolute output-chart coordinates.  Besides applying
-         * f, f_c proves D>0 and the required branch of the next chart; these
-         * are precisely the checks establishing 0 in U_i.
+         * Enclose the unshifted output-chart coordinates. Besides applying f,
+         * f_c proves that the input lift is defined and that the image has
+         * positive output discriminant and the required branch sign. Together
+         * these checks establish that 0 lies in U_i.
          */
         f_c(
             &image_first,
@@ -864,7 +861,7 @@ int main(void)
         interval_abs_upper(first_residual_upper, &first_residual);
         interval_abs_upper(second_residual_upper, &second_residual);
 
-        /* Certify, rather than merely reproduce, this manuscript row. */
+        /* Check every displayed bound against the computed enclosure. */
         certify_table_lower_bound(
             &input_discriminant,
             table_discriminant_lower[i],
@@ -904,7 +901,10 @@ int main(void)
             table_norm_upper[i]
         );
 
-        /* Full enclosures remain visible for independent audit/debugging. */
+        /*
+         * Print the residual and branch enclosures and the directed scalar
+         * bounds used for audit and debugging.
+         */
         mpfr_printf(
             "    raw R_i,1 = [%+.36RDe, %+.36RUe]\n"
             "    raw R_i,2 = [%+.36RDe, %+.36RUe]\n"
@@ -934,7 +934,9 @@ int main(void)
         mpfr_clear(norm_upper);
     }
 
-    /* Reject every exceptional MPFR condition before trusting comparisons. */
+    /*
+     * Reject every exceptional MPFR condition before returning a certificate.
+     */
     verify_mpfr_status();
 
     if (mpfr_cmp(maximum_norm_upper, manuscript_maximum_norm.lo) > 0) {

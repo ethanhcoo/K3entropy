@@ -414,7 +414,7 @@ void Diz(point p, double **matrix) {
     matrix[1][0] = 0;
     matrix[1][1] = 1;
 	matrix[1][2] = 0;
-	matrix[2][0] = -a*p.y*(1-p.x*p.x)/((1 + p.y*p.y)*(1 + p.x*p.x)*(1 + p.x*p.x)); //this has an arror you CUNT
+	matrix[2][0] = -a*p.y*(1-p.x*p.x)/((1 + p.y*p.y)*(1 + p.x*p.x)*(1 + p.x*p.x));
     matrix[2][1] = -a*p.x*(1-p.y*p.y)/((1 + p.x*p.x)*(1 + p.y*p.y)*(1 + p.y*p.y));
 	matrix[2][2] = -1;
 }

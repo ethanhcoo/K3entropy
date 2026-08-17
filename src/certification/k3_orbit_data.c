@@ -1,9 +1,8 @@
 #include "k3_orbit_data.h"
 
 /*
- * Table 1 pseudo-orbit centers, in temporal order.  Keeping these strings in
- * one translation unit prevents the three rigorous verifiers from silently
- * drifting apart.  They are data, not binary floating-point constants.
+ * Table 1 pseudo-orbit centers, in temporal order, stored as exact finite
+ * decimal strings for use by the certification programs.
  */
 const char *const k3_orbit_a_decimal[K3_ORBIT_LENGTH] = {
     "1.041643093944314148360673792017",

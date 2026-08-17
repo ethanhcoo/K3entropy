@@ -1,24 +1,24 @@
 /*
- * Certificate for Appendix C.4 of
- * "A Real K3 Automorphism with Most of Its Entropy in the Real Part".
+ * This is the program behind Appendix C.4. It certifies the nine relative
+ * homotopy classes shown in the top panel of Figure 4.
  *
- * The proof has two deliberately separate layers.
+ * First, it uses the outward-rounded interval arithmetic in
+ * certificate_interval.c and the orbit data in k3_orbit_data.c to put the ten
+ * marked points in disjoint rational boxes and certify their left-to-right
+ * order. It also checks that stereographic projection is defined on the
+ * required neighborhoods and covers the image of each thickened standard
+ * segment by a chain of overlapping rational rectangles.
  *
- *   Analytic layer (MPFR intervals, rounded outwards)
- *     - enclose the ten shadowing boxes in the stereographic plane;
- *     - certify their left-to-right order and the induced permutation;
- *     - cover the image of every thick input segment by rational rectangles.
+ * Next, it chooses a rational polygonal path through each rectangle chain.
+ * The checks on these polygons are exact: the program verifies containment,
+ * embeddedness, and the transversality conditions, computes their arc-data,
+ * simplifies it using arc_word.c, and compares the unreduced and reduced
+ * words with the rows in arc_certificate_data.c. The reduced rows are used by
+ * mclass.c.
  *
- *   Combinatorial layer (GMP rationals, exact arithmetic)
- *     - choose rational vertices in consecutive rectangle overlaps;
- *     - verify that the resulting polygonal path is embedded and transverse;
- *     - compute its arc-data exactly and compare both its unreduced and
- *       reduced words with the stored certificate rows.
- *
- * The decimal data in this file denote exact rationals.  The rows in
- * arc_certificate_data.c are never used to prove an inequality; they are
- * consulted only in the final exact comparisons.  Any inconclusive numerical
- * or geometric test terminates with a nonzero exit status.
+ * The orbit decimals in k3_orbit_data.c are treated as exact finite decimals.
+ * If an interval or exact-geometric check cannot be certified, the program
+ * exits unsuccessfully.
  */
 
 #include <limits.h>
@@ -64,7 +64,7 @@ typedef struct {
     interval z;
 } interval_point3;
 
-/* A first-order interval jet with respect to the segment parameter t. */
+/* Value and derivative intervals with respect to the segment parameter. */
 typedef struct {
     interval value;
     interval derivative;
@@ -916,7 +916,7 @@ static void q_surface(interval *result, const interval_point3 *point)
     intervals_clear(w, 10);
 }
 
-/* R followed by stereographic projection through gamma=(0,0,1). */
+/* Apply R, then stereographic projection through gamma=(0,0,1). */
 static int stereographic_project_interval(
     interval_point2 *result,
     interval *denominator_out,
@@ -1005,7 +1005,13 @@ static void inverse_stereographic_direction(
     duals_clear(w, 4);
 }
 
-/* Evaluate q(lambda*d) using its expanded radial polynomial. */
+/*
+ * For d=(dx,dy,dz), evaluate
+ * q(r d)=A r^2+10P r^3+B r^4+C r^6-1,
+ * where A=dx^2+dy^2+dz^2,
+ * B=dx^2 dy^2+dx^2 dz^2+dy^2 dz^2,
+ * C=dx^2 dy^2 dz^2, and P=dx dy dz.
+ */
 static void radial_q_at_scalar(
     interval *result,
     const dual_point3 *direction,
@@ -1027,7 +1033,7 @@ static void radial_q_at_scalar(
     interval_mul(&w[9], &direction->x.value, &direction->y.value);
     interval_mul(&w[10], &w[9], &direction->z.value); /* P */
 
-    /* A=dx^2+dy^2+dz^2=(dz+2)^2 for this homogeneous ray. */
+    /* Here A=dx^2+dy^2+dz^2=(dz+2)^2. */
     interval_set_si(&w[11], 2);
     interval_add(&w[12], &direction->z.value, &w[11]);
     interval_square(&w[13], &w[12]);
@@ -1093,10 +1099,10 @@ static void radial_q_derivative(
 
 /*
  * Uniformly bracket the positive radial root for every ray in direction.
- * The strict signs at the two endpoints, together with Lemma 3.12's global
- * uniqueness, prove containment.  Interval Newton only contracts that proven
- * bracket; it is never used as an unvalidated root finder.  Global
- * uniqueness is the content of the manuscript's star-shapedness lemma.
+ * The strict signs at the two endpoints, together with the global uniqueness
+ * supplied by the star-shapedness lemma, prove containment. Interval Newton
+ * only contracts that proven bracket; it is never used as an unvalidated root
+ * finder.
  */
 static int certify_radial_root(
     radial_certificate *certificate,
@@ -1142,7 +1148,7 @@ static int certify_radial_root(
         goto inconclusive;
     }
 
-    /* Rightmost radius at which negativity is uniformly certified. */
+    /* Refine the lower endpoint while preserving uniform negativity. */
     mpfr_set_zero(negative_bound, 1);
     mpfr_set(search_bound, positive_bound, MPFR_RNDN);
     for (int iteration = 0; iteration < RADIAL_BISECTIONS; ++iteration) {
@@ -1157,7 +1163,7 @@ static int certify_radial_root(
         ++statistics->radial_refinements;
     }
 
-    /* Leftmost radius at which positivity is uniformly certified. */
+    /* Refine the upper endpoint while preserving uniform positivity. */
     mpfr_set_zero(search_bound, 1);
     for (int iteration = 0; iteration < RADIAL_BISECTIONS; ++iteration) {
         mpfr_add(midpoint, search_bound, positive_bound, MPFR_RNDN);
@@ -1280,7 +1286,7 @@ static int radial_lift(
     dual_mul(&fixed_radius_point.z, &radius, &direction->z);
     dual_q_surface(&partial_q, &fixed_radius_point);
 
-    /* q(r(t)d(t))=0, hence r'=-partial_t(q)/partial_r(q). */
+    /* Differentiate q(r(t)d(t))=0 to obtain r'=-q_t/q_r. */
     interval_neg(&negative_partial, &partial_q.derivative);
     interval_div(
         &radius.derivative,
@@ -1410,10 +1416,7 @@ static void affine_segment_coordinate(
     interval_clear(&difference);
 }
 
-/*
- * Enclose Pi on the complete thick tube
- *     (1-t) left + t right,  t in parameter.
- */
+/* Enclose Pi((1-t)left+t right) for every t in parameter. */
 static int evaluate_pi_panel(
     dual *image_x,
     dual *image_y,
@@ -1862,6 +1865,10 @@ cleanup:
     dual_clear(&midpoint_x);
 }
 
+/*
+ * Subdivide until each image enclosure has the required width and avoids
+ * every puncture box except the permitted box at an endpoint.
+ */
 static void certify_panel_recursive(
     panel_vector *panels,
     const interval_point2 *left,
@@ -2090,12 +2097,10 @@ static void build_rectangle_chain(
 /* ------------------------------------------------------------------------- */
 
 /*
- * The reference point bar_z_i is the rational midpoint of B_i.  Because the
- * B_i are disjoint and both z_i and bar_z_i are interior, a local plane
- * homeomorphism taking z_i to bar_z_i can be supported in int(B_i).  Their
- * disjoint union is the theta used in the manuscript.  It need not be
- * evaluated numerically; the rectangle containments below are precisely the
- * facts about its support needed by the homotopy argument.
+ * The reference point bar_z_i is the rational midpoint of B_i. Since the
+ * boxes are disjoint and both z_i and bar_z_i lie in int(B_i), the local
+ * homeomorphisms taking z_i to bar_z_i have disjoint supports. Their union is
+ * the map theta in the manuscript. Only its support is used here.
  */
 
 static void rational_affine_coordinate(
@@ -2155,7 +2160,7 @@ static void choose_overlap_point(
         return;
     }
 
-    /* Deterministic interior perturbations; none is accepted without checks. */
+    /* Try deterministic rational points in the interior of the overlap. */
     x_numerator = 1 +
         ((unsigned long) attempt * 421UL +
          (unsigned long) boundary_index * 173UL) % (denominator - 1);
@@ -2212,7 +2217,7 @@ static int build_polygon_candidate(
     }
     rational_box_clear(&overlap);
 
-    /* This exact check is the convexity premise used panel by panel in C.4. */
+    /* Each segment then lies in its containing rectangle by convexity. */
     for (size_t i = 0; i < panels->count; ++i) {
         if (!rational_box_contains_point(
                 &panels->items[i].image,
@@ -2370,7 +2375,7 @@ static int path_is_embedded(
 
     for (size_t i = 0; i < segment_count; ++i) {
         for (size_t j = i + 2; j < segment_count; ++j) {
-            /* Disjoint containing rectangles prove disjoint segments cheaply. */
+            /* Segments in disjoint containing rectangles cannot intersect. */
             if (rational_boxes_disjoint(
                     &panels->items[i].image,
                     &panels->items[j].image
@@ -2440,7 +2445,10 @@ static int append_segment_crossing(
     return 1;
 }
 
-/* Compute the literal Definition 3.11 arc-data, in path order. */
+/*
+ * Compute the Definition 3.11 arc-data, plus crossing directions, in path
+ * order.
+ */
 static int compute_exact_arc_word(
     arc_gate_word *word,
     const rational_path *path,
@@ -2558,16 +2566,11 @@ static int polygon_certifies_expected_word(
     }
 
     /*
-     * The exact comparison above records every crossing in the literal
-     * arc-data.  mclass.c instead consumes the canonical reduced word.  The
-     * normalization below performs only the elementary relative homotopies
-     * described in arc_word.c:
-     * remove a spur at a marked endpoint, or cancel consecutive crossings of
-     * the same half-line on opposite traversals.  Such a pair bounds a bigon
-     * in one puncture-free vertical cell, so the operation preserves the
-     * relative homotopy class.  We retain and print raw_word separately so
-     * that the literal Definition 3.11 data are never conflated with this
-     * reduced input format.
+     * The comparison above checks every crossing. mclass.c instead uses the
+     * reduced word stored in arc_certificate_data.c. Endpoint spurs are
+     * removed by a relative homotopy near the endpoint; consecutive opposite
+     * crossings of the same half-line bound a bigon in a puncture-free
+     * vertical cell.
      */
     *reduced_word = *raw_word;
     if (!arc_word_reduce_relative(reduced_word, ORBIT_LENGTH)) {
@@ -2643,7 +2646,6 @@ static void certify_one_arc(
         for (unsigned int attempt = 0;
              attempt < MAX_POLYGON_ATTEMPTS;
              ++attempt) {
-            /* Whole-struct copying below must not read unused letters. */
             memset(&raw_word, 0, sizeof(raw_word));
             memset(&reduced_word, 0, sizeof(reduced_word));
             if (build_polygon_candidate(

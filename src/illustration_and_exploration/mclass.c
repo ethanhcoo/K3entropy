@@ -473,7 +473,7 @@ void s(int *arr1, int *arr2, int *size, int i) {
 		arr1[*size] = i; arr2[*size] = 0;
 		arr1[*size-1] = i; arr2[*size-1] = 1;
     	(*size) += 2;
-	 }else if(arr1[*size-1]==i && arr1[*size-2]==i-1){ //SURE THIS WORKS???
+	 }else if(arr1[*size-1]==i && arr1[*size-2]==i-1){
 		/*for (int i = *size; i > 0; i--) {
 			arr1[i] = arr1[i - 1];
 			arr2[i] = arr2[i - 1];
@@ -498,7 +498,6 @@ void s(int *arr1, int *arr2, int *size, int i) {
     	(*size) += 1;
 	 }
 
-	//first moves are different: need to test these more!
 	//accounting for ith spot = start
 	 if(arr1[0]==i && arr1[1]==i+1 && arr2[1]== 0 ){
 		for (int i = 0; i < *size - 1; i++) {

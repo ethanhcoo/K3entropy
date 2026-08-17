@@ -1,3 +1,5 @@
+/* Check the shared pseudo-orbit decimals and chart codes. */
+
 #include "k3_orbit_data.h"
 
 #include <stdio.h>

@@ -1,3 +1,8 @@
+/*
+ * An arc word records which vertical lines an arc crosses, whether it passes
+ * above or below each marked point, and the direction of each crossing.
+ */
+
 #ifndef ARC_WORD_H
 #define ARC_WORD_H
 
@@ -26,20 +31,20 @@ typedef struct {
 /*
  * Reduce a gate word relative to its endpoint punctures.
  *
- * In addition to ordinary cancellation of adjacent inverse crossings of the
- * same gate on the same side, crossings of the start barrier at the beginning
- * and crossings of the end barrier at the end are endpoint spurs.  They are
- * deleted iteratively.  When directions are supplied, a cancellable pair must
- * have opposite directions.  Direction zero means "not yet inferred", as in a
- * legacy position/height row.  This is the topological normalization
- * implemented by simplify_arrays() in arcs.c and simplify_path() in mclass.c.
+ * Adjacent inverse crossings of the same gate on the same side cancel.
+ * Crossings of the start barrier at the beginning and of the end barrier at
+ * the end are endpoint spurs and are also deleted.  When directions are
+ * supplied, a cancellable pair must have opposite directions.  Direction zero
+ * means "not yet inferred", as in a position/height row.  This is the same
+ * topological simplification implemented by simplify_arrays() in arcs.c and
+ * simplify_path() in mclass.c.
  *
  * Returns 1 on success and 0 if the input is malformed.
  */
 int arc_word_reduce_relative(arc_gate_word *word, int puncture_count);
 
 /*
- * Infer crossing directions from an endpoint-normalized gate/side sequence.
+ * Infer crossing directions after endpoint-spur simplification.
  * The barriers are numbered from left to right.  direction is set to +1 for
  * left-to-right and -1 for right-to-left.
  *
@@ -48,7 +53,7 @@ int arc_word_reduce_relative(arc_gate_word *word, int puncture_count);
 int arc_word_infer_directions(arc_gate_word *word, int puncture_count);
 
 /*
- * Convert the legacy position/height encoding to a reduced signed gate word.
+ * Convert a position/height row to a reduced signed gate word.
  * The first and last positions are endpoint labels; their heights are ignored.
  */
 int arc_word_from_legacy(
@@ -60,9 +65,9 @@ int arc_word_from_legacy(
 );
 
 /*
- * Compare a gate word with a row in the legacy position/height encoding.
+ * Compare a gate word with a position/height row.
  * The row may be unreduced or reduced; this function performs no
- * normalization.  Crossing direction and the endpoint height sentinel are
+ * simplification.  Crossing direction and the endpoint height sentinel are
  * deliberately not part of the comparison because neither belongs to the
  * stored position/height encoding.
  */

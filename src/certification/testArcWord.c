@@ -1,3 +1,8 @@
+/*
+ * Check the stored arc-data rows and the arc-word simplification.  The tests
+ * also reject inconsistent crossing directions.
+ */
+
 #include "arc_word.h"
 #include "arc_certificate_data.h"
 
@@ -79,7 +84,7 @@ static void test_shared_certificate_rows(void)
 /*
  * Check the stored row format.  The certificate program, not this unit test,
  * compares these rows with exact signed words and performs the certified
- * reduction.
+ * simplification.
  */
 static void test_stored_unreduced_rows(void)
 {
