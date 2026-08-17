@@ -16,13 +16,13 @@ SOURCE LAYOUT.
 The source tree is divided by purpose:
 
 	src/certification/
-		The three rigorous manuscript verifiers, their shared certificate
-		modules and canonical data, and a few unit tests for the shared
-		certification infrastructure.
+		The three programs that certify the computer-assisted claims in the
+		manuscript, together with the common code, data, and tests they use.
 
 	src/illustration_and_exploration/
-		Plotting and mapping-class programs, nonrigorous exploratory and
-		high-precision reference computations, and their K3/PostScript helpers.
+		Programs for producing figures, exploring numerical data, and computing
+		the mapping-class word, together with their supporting code. These
+		programs are not used for rigorous certification.
 
 The makefile remains in src/, so all build and check commands below are
 unchanged.  Generated executables are still written to bin/.
