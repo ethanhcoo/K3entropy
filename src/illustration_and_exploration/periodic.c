@@ -248,7 +248,7 @@ point initial_point()
 void draw_background(point z, int n)/*Ethan added this*/
 {
 	for (int i = 0; i<n; i++){
-		ps_dot_transparent(z);
+		ps_dot_transparent(z, 0);
 		z = f(z);
 	}
 }
@@ -278,7 +278,7 @@ void search_near(point q, double epsilon, int N){
                 p = lift(x,y);
                 if(is_recurrent(p)) {
                     fprintf(stderr, "Success at (%.20lf, %.20lf, %.20lf)\n", p.x, p.y, p.z);
-                    ps_dot(p,unravel);
+                    ps_dot(p, unravel, 0);
                 }
                 ;//draws dot
             };
@@ -301,7 +301,7 @@ void recurrent_search() /*searches in epsilon-steps for points that are delta, k
                 p = lift(x,y);
                 if(is_recurrent(p)) {
                     fprintf(stderr, "Success at (%.10lf, %.10lf, %.10lf)\n", p.x, p.y, p.z);
-                    ps_dot(p,unravel);
+                    ps_dot(p, unravel, 0);
                 }
                 ;//draws dot
             };
@@ -796,4 +796,3 @@ void search_near_exact_line(mpf_point *q, mpf_t epsilon, mpf_t delta, int N) {
     mpf_clears(x, z, temp, NULL);
     //clear_point(&p);
 }
-

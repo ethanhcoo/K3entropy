@@ -1,50 +1,126 @@
 Some added functionality to Curt McMullen's 'ORBITS OF AUTOMORPHISMS OF K3 SURFACES, Version 3.2 3/2006'
 Much of this ReadMe is a regurgitation of his ReadMe.
 
+CODE VERSIONS.
+The code corresponding to arXiv v1 is archived at
+https://github.com/ethanhcoo/K3entropy/releases/tag/arxiv-v1.
+The main branch contains the code for the current version of the paper.
+
 QUICKSTART.
 Starting in 'example' or 'src' folders.
 To execute './Arcs.run' type
 cd ..; cd src; make; cd ..; cd example; ./Arcs.run
 Same for other .run files
 
+SOURCE LAYOUT.
+The source tree is divided by purpose:
+
+	src/certification/
+		The three rigorous manuscript verifiers, their shared certificate
+		modules and canonical data, and a few unit tests for the shared
+		certification infrastructure.
+
+	src/illustration_and_exploration/
+		Plotting and mapping-class programs, nonrigorous exploratory and
+		high-precision reference computations, and their K3/PostScript helpers.
+
+The makefile remains in src/, so all build and check commands below are
+unchanged.  Generated executables are still written to bin/.
+
+RIGOROUS CERTIFICATION.
+From the src directory, run the shared-module tests and the three manuscript
+certificates with
+
+	make checkCertificateCommon
+	make checkPeriodicOrbitCertification
+	make checkDerivativeCertification
+	make checkPathCertification
+
+To build and run all of these, use
+
+	make checkAllCertifications
+
+The path certification is the longest and may take several minutes.  The
+plain 'make all' target builds the programs but does not run the certificates.
+
 THEORY.  A K3 surface S in R^3 is specified by the equation
 
 (1+x^2)(1+y^2)(1+z^2) + Axyz = B
 
 In many files, we set $A = 10$, $B = 2$. 
-	warning: periodicExact, derivativesExact, and derivatives have $A = 10$, $B = 2$ hard-coded into some functions
+	warning: periodicExact, verifyPeriodicOrbit, derivativesExact, derivativesInterval, derivatives, and verifyArcs have $A = 10$, $B = 2$ hard-coded into some functions
 
-Each line parallel to the x, y or z axis meets S in 2
-points, so we obtain 3 involutions by "sheet interchange".
+Each line parallel to the x, y or z axis meets S in 2 points, so we obtain 3 involutions by "sheet interchange".
 These maps preserves a natural volume element on S.
 
 Set f = Iz Iy Ix;
 
-PROGRAMS.  This directory contains 8 programs:
+PROGRAMS.  The source files are grouped by purpose below.
 
-(1) periodicExact.c 
-		- Verifies whether a particular orbit is a delta-pseudo-orbit for fixed delta, using the GNU MPFR library
-	Inputs: All inputs to periodicExact happen within periodicExact.c
-		- Specify a_i, b_i (see Arxiv preprint for notation) where 0\leq i < porbit_length
-		- Specify delta
-	Outputs: 
-		- Returns 'success' if for all i, d(\phi_i^c(a_i, b_i), (a_{i+1 (mod porbit_length)}, b_{i+1 (mod porbit_length)})) < delta
-		- Returns 'failure' otherwise
-	Note: Order of operations in function definitions for [alpha], [beta], [p_{\pm}], [f], [f_i^c] agree with order used in the Appendix of Arxiv preprint to produce error estimates.
+RIGOROUS CERTIFICATION PROGRAMS (certification/).
 
-(2) derivativesExact.c
-		- Gives derivative information the specific pseudorbit above using GNU MPFR library (see Tables 2 and 3 of Arxiv preprint)
-	Inputs: All inputs to derivativesExact happen within derivativesExact.c
-		- Specify a_i,b_i
+verifyPeriodicOrbit.c
+		- Rigorously certifies the Appendix C.3 pseudo-orbit, chart-branch, residual, and table bounds using outward-rounded MPFR intervals
+	Inputs:
+		- The exact pseudo-orbit coordinates and chart choices stored in k3_orbit_data.c
 	Outputs:
-		- Prints derivatives to command line (stderr)
-	
-(3) arcs.c
-		- Used to generate arc data
+		- Prints the certified residual table and full interval enclosures
+		- Exits unsuccessfully if any domain, branch, residual, or strict inequality cannot be certified
+
+derivativesInterval.c
+		- Rigorously encloses the same derivative information using outward-rounded MPFR interval arithmetic
+	Inputs:
+		- The exact pseudo-orbit coordinates and chart choices stored in k3_orbit_data.c
+	Outputs:
+		- Prints interval enclosures for the derivatives and derivative matrices to the command line (stderr)
+		- Certifies K < 115, R < 163, M < 442, positivity of the discriminant on the required neighborhoods, and the matrix-entry error bound used in the Arxiv preprint
+
+verifyArcs.c
+		- Rigorously certifies the Appendix C.4 path certificate
+		- Constructs rational polygonal representatives of the transported relative homotopy classes and computes their arc-data exactly
+	Inputs:
+		- The exact pseudo-orbit coordinates and chart choices stored in k3_orbit_data.c
+		- The expected unreduced and reduced arc-data stored in arc_certificate_data.c
+	Outputs:
+		- Prints the certified puncture order, exact polygonal arc-data, reduced mclass words, and interval-work statistics
+		- Checks rational containment, overlaps, embeddedness, transversality, and agreement with the stored unreduced and reduced rows
+		- Exits unsuccessfully if any analytic or exact-geometric test is inconclusive
+
+CERTIFICATION SUPPORT MODULES AND TESTS (certification/).
+
+certificate_interval.c and certificate_interval.h
+		- Shared outward-rounded MPFR interval arithmetic for the rigorous certificate programs
+		- Each certification program explicitly selects its own precision
+		- Operations return status values so the calling certification program can provide certificate-specific failure messages
+
+k3_orbit_data.c and k3_orbit_data.h
+		- Store the ten exact pseudo-orbit coordinate strings and chart choices in one canonical table
+		- Used by verifyPeriodicOrbit.c, derivativesInterval.c, and verifyArcs.c
+
+arc_certificate_data.c, arc_certificate_data.h,
+	arc_word.c, and arc_word.h
+		- arc_certificate_data.c stores both the literal unreduced position/height rows checked by verifyArcs.c and the reduced rows used by mclass.c
+		- arc_word.c performs the relative word reduction and compares computed words with the stored position/height rows
+
+testCertificateInterval.c, testK3OrbitData.c, and testArcWord.c
+		- Test the shared interval-arithmetic functions, the stored orbit and chart data, and the arc-word normalization.
+
+ILLUSTRATION AND EXPLORATION PROGRAMS (illustration_and_exploration/).
+
+periodic.c
+		- Experimentation only (No MPFR)
+		- Useful for finding recurrent orbits
+
+derivatives.c
+		- Experimentation only (No MPFR)
+		- Outputs derivative information along an orbit without using GNU MPFR library
+
+arcs.c
+		- Useful for generating uncertified plots of image arcs and uncertified arc data
 	Inputs in arcs.c:
 		- the x,y,z coordinates of a pseudo-periodic point and its period 
 	Inputs in command line (edit in arcs.run):
-		-b	Draw only bottom of surface.  By default the surface is transparent.
+		-b	Suppress plotted arc lines.
 		-c [x y] -r [r]
 			Set window for image by giving center and "radius".
 			Default is center (0,0), radius 1.2.
@@ -53,19 +129,19 @@ PROGRAMS.  This directory contains 8 programs:
 			The arc is drawn as a series of line segments each of length about eps.
 		-p [A B]
 			Change the parameters for the surface S.
-		-q	Quiet.
-		-t	Draw only top of surface
+		-q	Currently has no effect; diagnostic output remains enabled.
+		-t	Currently has no effect on arc plotting.
 		-s 	Rescales to unit sphere
-		-u 	Rescales, stereographically projects to plane, and normalized to disk
+		-u 	Rescales, stereographically projects to the plane, and maps coordinatewise to a stretched rectangle
 		-w [i]
 			Takes ith iteration under f of each arc p_k, i.e. f^i(p_k)
 		-v [m] 
 			Plots only f^i(p_m), the image of the mth arc. If this is missing, all arcs are plotted.
 	Outputs
 		- arc data for $f^i(p_k)$, where $i$ is fixed and $k$ varies over $0\leq k < orbit_length -1
-		- output is printed to the command line
+		- PostScript is printed to stdout; arc-data and diagnostics are printed to stderr
 	To generate the starting point of 'figure4':
-		(i)	Make sure that:
+		(i) Make sure that:
 				marked_point.x = -1.726895448754858426328854724474;  
 				marked_point.y = 1.041643093944314148360673792017;
 				marked_point.z = 1.726895448754858426328854724474;	
@@ -75,35 +151,53 @@ PROGRAMS.  This directory contains 8 programs:
 		(iii) To see each image arc individually, in Arcs.run:
 				../bin/arcs -r 3 -e .0002 -p 10 2 -u -v 0  -w 1 | ps2pdf - > arc0.pdf 
 				open arc0.pdf &
-			and change arcs by changing the integer folling '-v' to anything 0-9
+			and change arcs by changing the integer folling '-v' to anything 0-8
 
-(4) mclass.c
+mclass.c
+		- Exact downstream computation from the certified arc-data; it is not an interval-certification program
 		- used for writing the mapping class of f^2 as a product of dehn half-twists
-	Input: all inputs happen in mclass.c
-		- Image arc data, copied directly from command-line output of arcs.c
-	Output: Mapping class of g^{-1}, \overline{g}, and f^2 in terms of dehn half-twists (see Arxiv preprint for notation)
+		Input:
+			- Certified reduced arc-data stored in arc_certificate_data.c
+		Output:
+			- Mapping class of g^{-1}, \overline{g}, and f^2 in terms of dehn half-twists (see Arxiv preprint for notation)
 
-(5) Periodic.c
-		- Experimentation only (No MPFR)
-		- Useful for finding recurrent orbits
+FlipperDilatation.ipynb
+		- A jupyter notebook file, for running Flipper inside SageMath.
+		- Uses a hard-coded mapping-class word in flipper to find the dilatation of [f^2]
 
-(6) Derivatives.c (No MPFR)
-		- Experimentation only (No MPFR)
-		- Outputs derivative information along an orbit without using GNU MPFR library
+k3.c and k3.h
+		- k3.c contains some functions used in other files.
+	        - k3.h declares these functions and sets error thresholds.
 
-(7) FlipperDilation.ipynb
-		- A jupyter notebook file, for running Flipper inside SageMath. 
-		- Inputs the output of arcs.c into flipper to find the dilatation of [f^2]
-	
-(8) K3.c and K3.h
-		- K3.c contains some functions used in other files. 
-        - K3.h declares these functions and sets error thresholds.
+ps.c
+		- Contains PostScript plotting and coordinate-transformation helpers used by the illustration programs.
+
+LEGACY AND REFERENCE PROGRAMS.
+
+illustration_and_exploration/periodicExact.c
+		- Legacy high-precision reference, provided certification in earlier version of the paper, superseded for certification by verifyPeriodicOrbit.c
+		- Checks whether a particular orbit is a delta-pseudo-orbit for fixed delta, using the GNU MPFR library
+	Inputs: All inputs to periodicExact happen within periodicExact.c
+		- Specify a_i, b_i (see Arxiv preprint for notation) where 0\leq i < porbit_length
+		- Specify delta
+	Outputs:
+		- Prints 'successful delta pseudo-orbit' to stderr if for all i, d(\phi_i^c(a_i, b_i), (a_{i+1 (mod porbit_length)}, b_{i+1 (mod porbit_length)})) <= delta
+		- Prints 'failure' to stderr otherwise; currently exits with status 0 in either case
+		Note: Order of operations in function definitions for [alpha], [beta], [p_{\pm}], [f], [f_i^c] agree with order used in the Appendix of Arxiv preprint to produce error estimates.
+
+illustration_and_exploration/derivativesExact.c
+		- Legacy high-precision point evaluation, superseded for certification by derivativesInterval.c
+		- Gives derivative information for the specific pseudo-orbit above using the GNU MPFR library (see Tables 2 and 3 of Arxiv preprint)
+	Inputs: All inputs to derivativesExact happen within derivativesExact.c
+		- Specify a_i,b_i
+	Outputs:
+		- Prints derivatives to command line (stderr)
 
 See the individual .c files for comments describing specific functions
 
 EXAMPLES.
 
-All files can be run using the command-line input from QUICKSTART.
+The .run files in example/ can be run using the procedure from QUICKSTART.
 
 An example of a arcs.run is:
 	../bin/arcs -r 3 -e .0002 -p 10 2 -u -v 0  -w 1 | ps2pdf - > arc0.pdf 

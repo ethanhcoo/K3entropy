@@ -1,4 +1,12 @@
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wstrict-prototypes"
+#endif
 #include "k3.h"
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+#include "arc_certificate_data.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,6 +18,19 @@ int above_array[PSMAX];
 
 //Orbit_length is the order of the periodic point we are using
 #define orbit_length 10
+
+_Static_assert(
+	orbit_length == ARC_CERTIFICATE_ORBIT_LENGTH,
+	"mclass orbit length must match the arc certificate"
+);
+_Static_assert(
+	orbit_length - 1 == ARC_CERTIFICATE_ARC_COUNT,
+	"mclass arc count must match the arc certificate"
+);
+_Static_assert(
+	ARC_CERTIFICATE_REDUCED_ROW_CAPACITY <= 10000,
+	"certificate rows must fit the mutable mclass arrays"
+);
 
 //Matrix for storing twist data
 const char *word[PSMAX];
@@ -48,31 +69,34 @@ void expand_twist_data(int *arr, int *size, int k);
 //translates twist data on contracted system to twist data on full system
 
 int main(int argc, char *argv[]) {
+	(void)argc;
+	(void)argv;
 
 	//copied output from paths.c
-	int path_lengths[orbit_length-1] = {13, 3, 8, 12, 11, 11, 2, 7, 7};
-	int array_pos[orbit_length-1][10000] = {
-		{2, 3, 4, 5, 6, 7, 8, 9, 9, 8, 7, 6, 5},
-		{5, 6, 7},
-		{7, 6, 5, 5, 6, 7, 8, 9},
-		{9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 1},
-		{1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 8},
-		{8, 9, 9, 8, 7, 6, 5, 4, 3, 3, 4},
-		{4, 3},
-		{3, 4, 4, 3, 2, 1, 0},
-		{0, 1, 2, 3, 4, 5, 6}
-	};
-	int array_height[orbit_length-1][10000] = {
-		{-1000, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, -1000},
-		{-1000, 1, -1000},
-		{-1000, 1, 1, 0, 1, 0, 0, -1000},
-		{-1000, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, -1000},
-		{-1000, 0, 0, 0, 0, 0, 0, 0, 0, 1, -1000},
-		{-1000, 1, 0, 0, 0, 0, 0, 0, 0, 1, -1000},
-		{-1000, -1000},
-		{-1000, 0, 1, 1, 0, 1, -1000},
-		{-1000, 1, 1, 1, 1, 0, -1000}
-	};
+	int path_lengths[orbit_length-1] = {0};
+	int array_pos[orbit_length-1][10000] = {{0}};
+	int array_height[orbit_length-1][10000] = {{0}};
+
+	for (int i = 0; i < orbit_length-1; i++) {
+		if (
+			arc_certificate_reduced_path_lengths[i] < 2 ||
+			arc_certificate_reduced_path_lengths[i] >
+				ARC_CERTIFICATE_REDUCED_ROW_CAPACITY ||
+			arc_certificate_reduced_path_lengths[i] > 10000
+		) {
+			fprintf(
+				stderr,
+				"invalid shared certificate row length for arc %d\n",
+				i
+			);
+			return EXIT_FAILURE;
+		}
+		path_lengths[i] = arc_certificate_reduced_path_lengths[i];
+		for (int j = 0; j < path_lengths[i]; j++) {
+			array_pos[i][j] = arc_certificate_reduced_positions[i][j];
+			array_height[i][j] = arc_certificate_reduced_heights[i][j];
+		}
+	}
 
 
 	//copy arrays for testing
@@ -293,8 +317,6 @@ int main(int argc, char *argv[]) {
 		fprintf(stderr, "end\n");
 	}
 
-	int k = 0;
-
 	//y_final_array(twists, &twists_length);
 	//fprintf(stderr, "array is simplified!\n");
 
@@ -464,7 +486,7 @@ void s(int *arr1, int *arr2, int *size, int i) {
 	 else if (arr1[*size-2]==i && arr1[*size-1]==i+1 && arr2[*size-2]== 1 ){ 	
 		arr2[*size-2] = -1000;
     	(*size)--;
-	 } else if(arr1[*size-2]==i && arr1[*size-1]==i+1 && arr2[1]== 0 ){
+	 } else if(arr1[*size-2]==i && arr1[*size-1]==i+1 && arr2[*size-2]== 0 ){
     	arr1[*size+1] = i; arr2[*size+1] = -1000;
 		arr1[*size] = i+1; arr2[*size] = 1;
 		arr1[*size-1] = i+1; arr2[*size-1] = 0;
@@ -660,7 +682,7 @@ void star_algorithm(int *arr1, int *arr2, int *size, int *twistsy, int *len, int
 		//move starting point to k if it's not already there
 		if(arr1[*size-1]< k){
 			twistsy[*len] = arr1[*size-1];
-			s(arr1, arr2, size, arr1[arr1[*size-1]]);
+			s(arr1, arr2, size, arr1[*size-1]);
 			(*len)++;
 			continue;
 		}

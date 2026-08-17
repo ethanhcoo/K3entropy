@@ -7,10 +7,8 @@ typedef struct {double x, y, z;} point;
 /* Function types */
 point ix(point p), iy(point p), iz(point p), f(point p), lift(double x, double y), rotate(point p), sym(point p);
 double dist(point p, point q), involute(double x, double y, double z), norm(point p), pathlength(int n), surf();
-void init_color_map(), init_surface(), orbit(), random_orbits(), usage(), 
-	scan_window(), scan_dim(), setk3(double a, double b), scan_end(), scan_gray(), 
-	scan_set(), ps_colorimage(), printhex(), hlsrgb(), ps_image(),
-	patherr(), suberr();
+void init_color_map(), init_surface(), orbit(), random_orbits(), usage(),
+		setk3(double a, double b), patherr(), suberr();
 
 void ps_line(point p, point q, int unravel, int sphere), di(point *ps, int n), setsep(double s), draw_path(int n), draw_manifold(), ps_close();
 
