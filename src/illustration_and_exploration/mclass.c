@@ -11,6 +11,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
+
+static bool verbose_output = true;
+
+#define VERBOSE_REPORT(...) \
+	do { \
+		if (verbose_output) { \
+			fprintf(stderr, __VA_ARGS__); \
+		} \
+	} while (0)
 
 //Initialize arrays to path position data; used in determine_arrays
 int pos_array[PSMAX]; 
@@ -69,8 +79,15 @@ void expand_twist_data(int *arr, int *size, int k);
 //translates twist data on contracted system to twist data on full system
 
 int main(int argc, char *argv[]) {
-	(void)argc;
-	(void)argv;
+	bool flipper_word_only = false;
+
+	if (argc == 2 && strcmp(argv[1], "--flipper-word") == 0) {
+		flipper_word_only = true;
+	} else if (argc != 1) {
+		fprintf(stderr, "usage: %s [--flipper-word]\n", argv[0]);
+		return EXIT_FAILURE;
+	}
+	verbose_output = !flipper_word_only;
 
 	//copied output from paths.c
 	int path_lengths[orbit_length-1] = {0};
@@ -134,7 +151,7 @@ int main(int argc, char *argv[]) {
 	int size_temp = 0;
 
 	//MAIN MACHINERY: iterates through paths, applies twists, stores result in twist array
-	fprintf(stderr, "to main machinery:\n");
+	VERBOSE_REPORT("to main machinery:\n");
 
 	int twists_length_old = 0;
 
@@ -142,7 +159,7 @@ int main(int argc, char *argv[]) {
 		
 		size_temp = 0; //size_temp will be used to keep track of the number of twists
 
-		fprintf(stderr, "\n ITERATION NUMBER %d\n", i);
+		VERBOSE_REPORT("\n ITERATION NUMBER %d\n", i);
 
 		//applies all previous twists to ith path
 		for(int o = 0; o < orbit_length - 1; o++){
@@ -162,7 +179,7 @@ int main(int argc, char *argv[]) {
 		// print input data:
 		for(int o = 0; o < orbit_length - 1; o++){
 			for(int j = 0; j < path_lengths[o]; j++){
-				fprintf(stderr, "(%d, %d)\n", array_pos[o][j], array_height[o][j]);
+				VERBOSE_REPORT("(%d, %d)\n", array_pos[o][j], array_height[o][j]);
 			}
 		}
 
@@ -176,20 +193,20 @@ int main(int argc, char *argv[]) {
 		star_algorithm(arr1_temp, arr2_temp, &size_pos_temp, new_twists, &size_temp, i); //orbit_length - 2 > number of contracted strands
 		
 		//print new twists in contracted system
-		fprintf(stderr, " Apply \\tilde g_%d: ", i);
+		VERBOSE_REPORT(" Apply \\tilde g_%d: ", i);
 		for(int j = size_temp-1; j >= 0; j--){
 			if(new_twists[j] >= 0){
 				if(new_twists[j] == i && i > 0){
-					fprintf(stderr, "\\tilde s_%d.", new_twists[j]);
+					VERBOSE_REPORT("\\tilde s_%d.", new_twists[j]);
 				} else{
-					fprintf(stderr, "s_%d.", new_twists[j]);
+					VERBOSE_REPORT("s_%d.", new_twists[j]);
 				}
 			}
 			if(new_twists[j] < 0){
 				if( -new_twists[j]-1 == i && i > 0){
-					fprintf(stderr, "\\tilde s_%d^{-1}.", -new_twists[j]-1);
+					VERBOSE_REPORT("\\tilde s_%d^{-1}.", -new_twists[j]-1);
 				} else{
-					fprintf(stderr, "s_%d^{-1}.", -new_twists[j]-1);
+					VERBOSE_REPORT("s_%d^{-1}.", -new_twists[j]-1);
 				}
 			}
 		}
@@ -198,23 +215,23 @@ int main(int argc, char *argv[]) {
 		process_array(new_twists, &size_temp, i);
 
 		//print new twists in full system
-		fprintf(stderr, "\n \n Apply g_%d': ", i);
+		VERBOSE_REPORT("\n \n Apply g_%d': ", i);
 		for(int j = size_temp - 1; j >= 0; j--){
 			if(new_twists[j] >= 0){
-				fprintf(stderr, "s_%d.", new_twists[j]);				
+				VERBOSE_REPORT("s_%d.", new_twists[j]);
 			}
 			if(new_twists[j] < 0){
-				fprintf(stderr, "s_%d^{-1}.", -new_twists[j]-1);
+				VERBOSE_REPORT("s_%d^{-1}.", -new_twists[j]-1);
 			}
 		}
 
-		fprintf(stderr, "\n \n (g_%d')^{-1}: ", i);
+		VERBOSE_REPORT("\n \n (g_%d')^{-1}: ", i);
 		for(int j = 0; j < size_temp; j++){
 			if(new_twists[j] >= 0){
-				fprintf(stderr, "s_%d^{-1}.", new_twists[j]);				
+				VERBOSE_REPORT("s_%d^{-1}.", new_twists[j]);
 			}
 			if(new_twists[j] < 0){
-				fprintf(stderr, "s_%d.", -new_twists[j]-1);
+				VERBOSE_REPORT("s_%d.", -new_twists[j]-1);
 			}
 		}
 
@@ -245,7 +262,7 @@ int main(int argc, char *argv[]) {
 			//want to use star algorithm to move ending point of ith path
 
 		if(path_lengths[i] > 2){ //
-			fprintf(stderr, "twisting!\n");
+			VERBOSE_REPORT("twisting!\n");
 			size_temp = 0;
 		
 			star_algorithm(array_pos[i], array_height[i], &path_lengths[i], new_twists, &size_temp, i); //this will apply dehn twists
@@ -256,21 +273,21 @@ int main(int argc, char *argv[]) {
 			}
 			twists_length += size_temp;
 
-			fprintf(stderr, "Apply twist: ");
+			VERBOSE_REPORT("Apply twist: ");
 			for(int j = size_temp-1; j >= 0; j--){
 				if(new_twists[j] >= 0){
 					if(new_twists[j] == i && i > 0){
-						fprintf(stderr, "\\tilde s_%d.", new_twists[j]);
+						VERBOSE_REPORT("\\tilde s_%d.", new_twists[j]);
 					} else{
-						fprintf(stderr, "s_%d.", new_twists[j]);
+						VERBOSE_REPORT("s_%d.", new_twists[j]);
 					}
 					
 				}
 				if(new_twists[j] < 0 && i > 0){
 					if( -new_twists[j]-1 == i){
-						fprintf(stderr, "\\tilde s_%d^{-1}.", -new_twists[j]-1);
+						VERBOSE_REPORT("\\tilde s_%d^{-1}.", -new_twists[j]-1);
 					} else{
-						fprintf(stderr, "s_%d^{-1}.", -new_twists[j]-1);
+						VERBOSE_REPORT("s_%d^{-1}.", -new_twists[j]-1);
 					}
 				}
 			}
@@ -290,16 +307,16 @@ int main(int argc, char *argv[]) {
 		//}
 	}
 
-	fprintf(stderr, "main machinery complete\n");
+	VERBOSE_REPORT("main machinery complete\n");
 	
 	//simplify_final_array(twists, &twists_length);
 	//fprintf(stderr, "array is simplified!\n");
 
 	//check machinery
-	fprintf(stderr, "checking machinery\n");
+	VERBOSE_REPORT("checking machinery\n");
 	for(int k = 0; k < orbit_length-1; k++){
 		for(int j = 0; j < path_lengths_testing[k]; j++){
-			fprintf(stderr, "(%d, %d)\n", array_pos_testing[k][j], array_height_testing[k][j]);
+			VERBOSE_REPORT("(%d, %d)\n", array_pos_testing[k][j], array_height_testing[k][j]);
 		}	
 		for(int j = 0; j < twists_length; j++){
 			if(twists[j] >= 0){
@@ -312,9 +329,9 @@ int main(int argc, char *argv[]) {
 			}
 		}
 		for(int n = 0; n < path_lengths_testing[k]; n++){
-			fprintf(stderr, "(%d, %d)\n", array_pos_testing[k][n], array_height_testing[k][n]); 
+			VERBOSE_REPORT("(%d, %d)\n", array_pos_testing[k][n], array_height_testing[k][n]);
 		}
-		fprintf(stderr, "end\n");
+		VERBOSE_REPORT("end\n");
 	}
 
 	//y_final_array(twists, &twists_length);
@@ -337,32 +354,54 @@ int main(int argc, char *argv[]) {
 
 	//fprintf(stderr, "length of g is %d\n", twists_length);
 
-	//print g, g^{-1}, \hat g, and f^2
+	if (flipper_word_only) {
+		bool first_token = true;
 
-	fprintf(stderr, "\n g = ");
-	for (int j = twists_length-1; j >= 0  ; j--) {
-        fprintf(stderr, "%s.", twists_word1[j]);
-    }
+		for (int j = 0; j < twists_length; j++) {
+			if (!first_token) {
+				fputc('.', stdout);
+			}
+			fputs(twists_word2[j], stdout);
+			first_token = false;
+		}
+		for (int j = 0; j < twists_length; j++) {
+			if (!first_token) {
+				fputc('.', stdout);
+			}
+			fputs(twists_word1[j], stdout);
+			first_token = false;
+		}
+		if (fputc('\n', stdout) == EOF || ferror(stdout)) {
+			fprintf(stderr, "failed to write the Flipper word\n");
+			return EXIT_FAILURE;
+		}
+	} else {
+		// Print g, g^{-1}, \hat g, and f^2 in the original diagnostic format.
+		fprintf(stderr, "\n g = ");
+		for (int j = twists_length-1; j >= 0; j--) {
+			fprintf(stderr, "%s.", twists_word1[j]);
+		}
 
-	fprintf(stderr, "\n \n g^{-1} = ");
-	for (int j = 0; j <  twists_length; j++) {
-        fprintf(stderr, "%s.", twists_word2[j]);
-    }
+		fprintf(stderr, "\n \n g^{-1} = ");
+		for (int j = 0; j < twists_length; j++) {
+			fprintf(stderr, "%s.", twists_word2[j]);
+		}
 
-	fprintf(stderr, "\n \n\\overline g = ");
-	for (int j = 0; j <  twists_length; j++) {
-        fprintf(stderr, "%s.", twists_word1[j]);
-    }
+		fprintf(stderr, "\n \n\\overline g = ");
+		for (int j = 0; j < twists_length; j++) {
+			fprintf(stderr, "%s.", twists_word1[j]);
+		}
 
-	fprintf(stderr, "\n \n f^2 = g^{-1}\\overline g = ");
-	for (int j = 0; j <  twists_length; j++) {
-        fprintf(stderr, "%s.", twists_word2[j]);
-    }
-	for (int j = 0; j <  twists_length; j++) {
-        fprintf(stderr, "%s.", twists_word1[j]);
-    }
+		fprintf(stderr, "\n \n f^2 = g^{-1}\\overline g = ");
+		for (int j = 0; j < twists_length; j++) {
+			fprintf(stderr, "%s.", twists_word2[j]);
+		}
+		for (int j = 0; j < twists_length; j++) {
+			fprintf(stderr, "%s.", twists_word1[j]);
+		}
+	}
 
-	exit(0);
+	return EXIT_SUCCESS;
 }
 
 
