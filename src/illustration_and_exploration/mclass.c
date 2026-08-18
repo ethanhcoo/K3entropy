@@ -655,7 +655,7 @@ bool reducing_move(int *arr1, int *arr2, int *size, int *twistsy, int *len) {
 	if(arr1[0] < arr1[1] && arr2[1] == 1){
 		//apply + append S_{arr1[0]}
 		twistsy[*len] = -arr1[0]-1;
-		S(arr1, arr2, size, arr1[0]); //STILL MUST DEFINE S
+		S(arr1, arr2, size, arr1[0]);
 		(*len)++;
 		simplified = true;
 		return simplified;

@@ -56,11 +56,12 @@ produced and checked with:
 
 - SageMath 10.5
 - Flipper 0.15.6
+- realalg 0.3.6
 
-After installing SageMath 10.5, install Flipper into Sage's environment:
+After installing SageMath 10.5, install Flipper and realalg into Sage's environment:
 
 ```sh
-sage -pip install flipper==0.15.6
+sage -pip install flipper==0.15.6 realalg==0.3.6
 ```
 
 From the repository root, open the notebook and run all cells in order:
@@ -70,7 +71,7 @@ sage -n jupyter FlipperDilatation.ipynb
 ```
 
 The notebook reads the mapping-class word from `mapping_class_word.txt` and
-checks the SageMath and Flipper versions before running the computation.
+checks the SageMath, Flipper, and realalg versions before running the computation.
 
 The canonical word can also be checked directly against the word recomputed
 from the certified arc-data by `mclass`:
@@ -315,9 +316,9 @@ arcs.c
 		-v [m] 
 			Plots only f^i(p_m), the image of the mth arc. If this is missing, all arcs are plotted.
 	Outputs
-		- arc data for $f^i(p_k)$, where $i$ is fixed and $k$ varies over $0\leq k < orbit_length -1
+		- arc data for $f^i(p_k)$, where $i$ is fixed and $k$ varies over $0\leq k < orbit_length -1$
 		- PostScript is printed to stdout; arc-data and diagnostics are printed to stderr
-	To generate the top panel of 'figure4':
+	To generate the top panel of Figure 4:
 		(i) Make sure that:
 				marked_point.x = -1.726895448754858426328854724474;  
 				marked_point.y = 1.041643093944314148360673792017;
