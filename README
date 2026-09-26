@@ -8,6 +8,8 @@ This repository contains the code accompanying version 2 of the arXiv preprint
 [arxiv-v2 tag](https://github.com/ethanhcoo/K3entropy/tree/arxiv-v2). The
 `main` branch may continue to change.
 
+ChatGPT was used to assist with writing and revising the code accompanying arXiv v2.
+
 The code accompanying arXiv v1 is archived in the
 [arxiv-v1 release](https://github.com/ethanhcoo/K3entropy/releases/tag/arxiv-v1).
 
